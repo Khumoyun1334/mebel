@@ -1,98 +1,189 @@
 import React, { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
+import { useAdmin } from '../context/AdminContext';
 import ProductCard from '../components/ProductCard';
 import SectionTitle from '../components/SectionTitle';
 import Stars from '../components/Stars';
-import Footer from '../components/Footer';
-import { PRODUCTS } from '../data/data';
+import { FiHeart, FiCheck, FiMinus, FiPlus, FiChevronRight } from 'react-icons/fi';
 
-function ProductDetailPage({ product, setPage }) {
+function ProductDetailPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { products } = useAdmin();
   const { addToCart } = useCart();
   const { toggleWishlist, hasInWishlist } = useWishlist();
   const { showToast } = useToast();
+  
+  const product = products.find(p => p.id === parseInt(id));
   const [qty, setQty] = useState(1);
-  const isWishlisted = hasInWishlist(product.id);
-  const related = PRODUCTS.filter(p => p.category === product.category && p.id !== product.id).slice(0, 3);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedColor, setSelectedColor] = useState(0);
+  const isWishlisted = hasInWishlist(product?.id);
+  
+  // Galereya rasmlari - agar images bo'lmasa, asosiy rasmni ishlatamiz
+  const galleryImages = product?.images && product.images.length > 0 
+    ? product.images 
+    : (product?.img ? [product.img] : []);
+  
+  const related = products.filter(p => p.category === product?.category && p.id !== product?.id).slice(0, 4);
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="font-serif text-3xl text-dark">Mahsulot topilmadi</h1>
+          <Link to="/products" className="text-accent mt-4 inline-block">Mahsulotlarga qaytish</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const discount = product.oldPrice ? product.oldPrice - product.price : 0;
 
   return (
-    <div className="min-h-screen bg-lightBg">
-      <div className="max-w-7xl mx-auto px-8 py-12">
-        <button 
-          onClick={() => setPage("Products")} 
-          className="bg-transparent border-none cursor-pointer text-gray-500 text-sm flex items-center gap-2 mb-9 font-sans"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="m15 18-6-6 6-6"/>
-          </svg> 
-          Mahsulotlarga Orqaga
-        </button>
-        
-        <div className="grid md:grid-cols-2 gap-15 items-start">
-          <div className="rounded-2xl overflow-hidden h-[520px]">
-            <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
-          </div>
-          
-          <div className="pt-5">
-            <p className="text-[11px] text-accent font-bold tracking-[0.1em] uppercase mb-2.5">{product.category}</p>
-            <h1 className="text-[38px] font-serif font-normal text-dark mb-4 leading-tight">{product.name}</h1>
-            <div className="flex items-center gap-3 mb-5">
-              <Stars rating={product.rating} />
-              <span className="text-[13px] text-gray-500">{product.rating} ({product.reviews} fikr)</span>
+    <div className="min-h-screen bg-lightBg pt-[72px]">
+      {/* Breadcrumb */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-5">
+        <div className="flex items-center gap-2 text-xs md:text-sm text-gray-500">
+          <Link to="/" className="text-accent hover:underline">Bosh Sahifa</Link>
+          <FiChevronRight size={14} />
+          <Link to="/products" className="text-accent hover:underline">Mahsulotlar</Link>
+          <FiChevronRight size={14} />
+          <span>{product.name}</span>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pb-12 md:pb-20">
+        <div className="flex flex-col lg:flex-row gap-8 md:gap-12 lg:gap-16 mb-12 md:mb-20">
+          {/* Rasmlar Galereyasi */}
+          <div className="lg:w-1/2">
+            <div className="rounded-2xl overflow-hidden h-80 md:h-[450px] bg-cream mb-4">
+              <img 
+                src={galleryImages[selectedImage] || product.img} 
+                alt={product.name} 
+                className="w-full h-full object-cover" 
+              />
             </div>
-            <div className="flex items-baseline gap-4 mb-6">
-              <span className="text-[34px] font-bold text-dark">${product.price.toLocaleString()}</span>
-              <span className="text-lg text-gray-300 line-through">${product.oldPrice.toLocaleString()}</span>
-              <span className="text-[13px] text-green-600 font-semibold">${(product.oldPrice - product.price).toLocaleString()} Tejang</span>
-            </div>
-            <p className="text-base text-gray-600 leading-relaxed mb-8">{product.desc}</p>
-            
-            <div className="flex gap-4 mb-6 items-center">
-              <div className="flex items-center border-[1.5px] border-gray-300 rounded-full overflow-hidden">
-                <button onClick={() => setQty(Math.max(1, qty-1))} className="w-11 h-11 bg-transparent border-none text-xl cursor-pointer text-dark">−</button>
-                <span className="w-9 text-center font-semibold">{qty}</span>
-                <button onClick={() => setQty(qty+1)} className="w-11 h-11 bg-transparent border-none text-xl cursor-pointer text-dark">+</button>
+            {galleryImages.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {galleryImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0 ${
+                      idx === selectedImage ? "border-accent" : "border-transparent"
+                    }`}
+                  >
+                    <img src={img} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
               </div>
-              <button 
-                onClick={() => { addToCart(product, qty); showToast(`${product.name} savatga qo'shildi!`); }} 
-                className="flex-1 bg-dark text-white border-none rounded-full py-3.5 text-sm font-bold cursor-pointer tracking-[0.06em] uppercase transition-all hover:bg-accent"
+            )}
+          </div>
+
+          {/* Mahsulot Ma'lumotlari */}
+          <div className="lg:w-1/2">
+            <p className="text-accent text-[11px] md:text-xs font-semibold tracking-wider uppercase mb-2">{product.category}</p>
+            <h1 className="font-serif text-2xl md:text-4xl font-normal text-dark mb-3 md:mb-4 leading-tight">{product.name}</h1>
+            <div className="flex items-center gap-3 mb-5 md:mb-6">
+              <Stars rating={product.rating} />
+              <span className="text-xs text-gray-400">|</span>
+              <span className="text-xs text-success font-semibold">Sotuvda Bor</span>
+            </div>
+            <div className="flex items-baseline gap-3 mb-6 md:mb-7 pb-6 border-b border-gray-100">
+              <span className="font-serif text-2xl md:text-4xl text-dark font-normal">
+                ${product.price.toLocaleString()}
+              </span>
+              {product.oldPrice && (
+                <>
+                  <span className="text-base md:text-xl text-gray-400 line-through">
+                    ${product.oldPrice.toLocaleString()}
+                  </span>
+                  <span className="bg-green-50 text-success text-xs md:text-sm font-semibold px-2 py-1 rounded">
+                    ${discount.toLocaleString()} tejang
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="text-sm md:text-base leading-relaxed text-gray-600 mb-6 md:mb-7">{product.desc}</p>
+
+            {/* Ranglar */}
+            {product.colors && product.colors.length > 0 && (
+              <div className="mb-6 md:mb-7">
+                <p className="text-xs font-semibold text-dark uppercase tracking-wider mb-3">Ranglar</p>
+                <div className="flex gap-2.5 flex-wrap">
+                  {product.colors.slice(0, 6).map((c, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedColor(i)}
+                      style={{ backgroundColor: c }}
+                      className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        i === selectedColor ? "border-primary scale-110 shadow-md" : "border-gray-300"
+                      }`}
+                      title={c}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Miqdor */}
+            <div className="mb-6 md:mb-7">
+              <p className="text-xs font-semibold text-dark uppercase tracking-wider mb-3">Miqdor</p>
+              <div className="flex items-center bg-cream rounded-xl w-fit">
+                <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-9 h-9 md:w-11 md:h-11 border-none bg-transparent cursor-pointer flex items-center justify-center rounded-l-xl">
+                  <FiMinus size={14} />
+                </button>
+                <span className="w-10 md:w-12 text-center text-sm md:text-base font-semibold">{qty}</span>
+                <button onClick={() => setQty(qty + 1)} className="w-9 h-9 md:w-11 md:h-11 border-none bg-transparent cursor-pointer flex items-center justify-center rounded-r-xl">
+                  <FiPlus size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Tugmalar */}
+            <div className="flex gap-3 md:gap-4 mb-6 md:mb-7">
+              <button
+                onClick={() => { addToCart(product, qty); showToast(`${product.name} savatga qo'shildi!`); }}
+                className="flex-1 bg-dark text-white border-none py-3 md:py-4 rounded-xl text-sm md:text-base font-serif font-semibold cursor-pointer hover:bg-accent transition-all"
               >
                 Savatga Qo'shish
               </button>
-              <button 
-                onClick={() => { toggleWishlist(product); showToast(isWishlisted ? "Istaklar ro'yxatidan o'chirildi" : "Istaklar ro'yxatiga qo'shildi!"); }} 
-                className={`w-12 h-12 rounded-full border-[1.5px] bg-transparent cursor-pointer flex items-center justify-center transition-all ${
-                  isWishlisted ? "border-red-500" : "border-gray-300"
+              <button
+                onClick={() => { toggleWishlist(product); showToast(isWishlisted ? "Istaklar ro'yxatidan o'chirildi" : "Istaklar ro'yxatiga qo'shildi!"); }}
+                className={`w-11 h-11 md:w-14 md:h-14 rounded-xl border cursor-pointer flex items-center justify-center transition-all ${
+                  isWishlisted ? "border-red-500 bg-red-50" : "border-gray-200 bg-white"
                 }`}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill={isWishlisted ? "#e55" : "none"} stroke={isWishlisted ? "#e55" : "#888"} strokeWidth="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
+                <FiHeart size={18} className={isWishlisted ? "fill-red-500 text-red-500" : "text-gray-500"} />
               </button>
             </div>
-            
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              {[["Bepul Yetkazib Berish", "$500 dan ortiq xaridlarda"], ["30-Kunlik Qaytarish", "Muammosiz qaytarish"], ["5-Yillik Kafolat", "Barcha mebellarda"]].map(([t, s]) => (
-                <div key={t} className="flex items-center gap-3.5 py-2.5 border-b border-gray-50">
-                  <div className="w-2 h-2 rounded-full bg-accent" />
-                  <div><span className="font-semibold text-sm text-dark">{t}</span> <span className="text-[13px] text-gray-500">— {s}</span></div>
+
+            {/* Xususiyatlar */}
+            <div className="grid grid-cols-2 gap-3">
+              {["$500+ Bepul Yetkazib Berish", "30-Kunlik Qaytarish", "2 Yillik Kafolat", "Yig'ish Xizmati"].map(f => (
+                <div key={f} className="flex items-center gap-2 text-xs text-gray-500">
+                  <FiCheck className="text-success" size={14} />
+                  <span>{f}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-        
+
+        {/* O'xshash Mahsulotlar */}
         {related.length > 0 && (
-          <div className="mt-20">
+          <div className="mt-12 md:mt-20">
             <SectionTitle label="Sizga Yoqishi Mumkin" title="O'xshash Mahsulotlar" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
-              {related.map(p => <ProductCard key={p.id} product={p} onView={prod => { setPage("Detail"); }} />)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
+              {related.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           </div>
         )}
       </div>
-      <Footer setPage={setPage} />
     </div>
   );
 }

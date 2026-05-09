@@ -1,55 +1,63 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
-import Footer from '../components/Footer';
+import { FiHeart, FiShoppingCart } from 'react-icons/fi';
 
-function WishlistPage({ setPage, setDetailProduct }) {
+function WishlistPage() {
+  const navigate = useNavigate();
   const { wishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
-  if (!wishlist.length) {
+  if (wishlist.length === 0) {
     return (
-      <div className="min-h-screen bg-lightBg flex flex-col items-center justify-center gap-5">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1.5">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-        <h2 className="font-serif text-dark text-[28px]">Istaklar Ro'yxatingiz Bo'sh</h2>
-        <p className="text-gray-500">Sevimli buyumlarni keyinroq uchun saqlang</p>
-        <button onClick={() => setPage("Products")} className="bg-accent text-white border-none rounded-full px-8 py-3.5 text-sm font-bold cursor-pointer">
+      <div className="min-h-screen bg-lightBg flex flex-col items-center justify-center gap-4 md:gap-5 px-4 pt-[72px]">
+        <FiHeart size={64} className="text-gray-300" />
+        <h2 className="font-serif text-2xl md:text-3xl font-normal text-dark">Istaklar Ro'yxatingiz Bo'sh</h2>
+        <p className="text-gray-500 text-sm md:text-base">Sevimli mahsulotlarni keyinroq uchun saqlang</p>
+        <Link to="/products" className="bg-accent text-white border-none px-6 md:px-8 py-3 rounded-lg text-sm md:text-base font-serif cursor-pointer">
           Mahsulotlarni Ko'rish
-        </button>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-lightBg">
-      <div className="max-w-7xl mx-auto px-8 py-12">
-        <h1 className="text-4xl font-serif font-normal text-dark mb-9">Istaklar Ro'yxati ({wishlist.length})</h1>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
-          {wishlist.map(p => (
-            <div key={p.id} className="bg-white rounded-2xl overflow-hidden shadow-md">
-              <div className="h-55 overflow-hidden cursor-pointer" onClick={() => { setDetailProduct(p); setPage("Detail"); }}>
-                <img src={p.img} alt={p.name} className="w-full h-full object-cover transition-transform hover:scale-110 duration-500" />
+    <div className="min-h-screen bg-lightBg pt-[72px]">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-10">
+        <h1 className="font-serif text-2xl md:text-4xl font-normal text-dark mb-6 md:mb-10">
+          Istaklar Ro'yxati <span className="text-sm text-gray-500 font-sans">({wishlist.length} mahsulot)</span>
+        </h1>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">
+          {wishlist.map(item => (
+            <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-sm transition-all hover:shadow-md">
+              <div className="relative h-56 bg-cream">
+                <img
+                  src={item.img}
+                  alt={item.name}
+                  onClick={() => navigate(`/product/${item.id}`)}
+                  className="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105 duration-500"
+                />
+                <button
+                  onClick={() => { toggleWishlist(item); showToast("Istaklar ro'yxatidan o'chirildi", "error"); }}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                >
+                  <FiHeart size={16} className="fill-red-500 text-red-500" />
+                </button>
               </div>
-              <div className="p-5">
-                <h3 className="text-lg font-serif text-dark mb-2">{p.name}</h3>
-                <div className="text-xl font-bold text-dark mb-4">${p.price.toLocaleString()}</div>
-                <div className="flex gap-2.5">
-                  <button 
-                    onClick={() => { addToCart(p); showToast(`${p.name} savatga qo'shildi!`); }} 
-                    className="flex-1 bg-dark text-white border-none rounded-full py-2.5 text-[13px] font-semibold cursor-pointer hover:bg-accent transition-all"
+              <div className="p-4">
+                <p className="text-[10px] text-accent font-semibold tracking-wider uppercase mb-1">{item.category}</p>
+                <h3 className="font-serif text-sm md:text-base font-normal text-dark mb-2">{item.name}</h3>
+                <div className="flex justify-between items-center mt-3">
+                  <span className="font-serif text-lg font-bold text-dark">${item.price.toLocaleString()}</span>
+                  <button
+                    onClick={() => { addToCart(item); showToast(`${item.name} savatga qo'shildi!`); }}
+                    className="bg-dark text-white border-none px-4 py-2 rounded-full text-xs font-semibold cursor-pointer flex items-center gap-1 hover:bg-accent transition-all"
                   >
-                    Savatga Qo'shish
-                  </button>
-                  <button 
-                    onClick={() => { toggleWishlist(p); showToast("Istaklar ro'yxatidan o'chirildi", "error"); }} 
-                    className="w-10 h-10 rounded-full border-[1.5px] border-red-500 bg-transparent cursor-pointer text-red-500 flex items-center justify-center"
-                  >
-                    ✕
+                    <FiShoppingCart size={12} /> Savatga
                   </button>
                 </div>
               </div>
@@ -57,7 +65,6 @@ function WishlistPage({ setPage, setDetailProduct }) {
           ))}
         </div>
       </div>
-      <Footer setPage={setPage} />
     </div>
   );
 }
