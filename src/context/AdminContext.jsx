@@ -51,13 +51,23 @@ export function AdminProvider({ children }) {
     setIsAdmin(false);
   };
 
-
-  const loadData = async () => {
+const loadData = async () => {
   setLoading(true);
   try {
-    console.log('🔍 Ma\'lumotlar yuklanmoqda...');
-    const productsData = await getProducts();
+    const supabaseUrl = 'https://hxrwrhbbijfntbrntpxk.supabase.co';
+    const supabaseKey = 'sb_publishable_qnJTSPaIOR5tn0dZw2RdgA_w6WOjvsJ';
+    
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/products?apikey=${supabaseKey}`,
+      {
+        headers: { 'apikey': supabaseKey }
+      }
+    );
+    
+    const productsData = await response.json();
     console.log('✅ Mahsulotlar:', productsData);
+    console.log('📦 Soni:', productsData?.length);
+    
     setProducts(productsData || []);
   } catch (error) {
     console.error('❌ Xatolik:', error);
