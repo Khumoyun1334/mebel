@@ -8,11 +8,27 @@ import { CATEGORIES, REVIEWS } from '../data/data';
 import { useAdmin } from '../context/AdminContext';
 
 function HomePage() {
-  const { products } = useAdmin();
-  const featured = products.slice(0, 4);
-  const bestSellers = products.filter(p => p.badge === "Eng Ko'p Sotilgan" || p.rating >= 4.8);
-  const kitchenProducts = products.filter(p => p.category === "Oshxona Mebellari").slice(0, 4);
-  const officeProducts = products.filter(p => p.category === "Ofis Mebellari").slice(0, 4);
+  const { products = [], loading } = useAdmin();
+  
+  // products undefined bo'lsa, default [] ishlatiladi
+  const safeProducts = products || [];
+  
+  const featured = safeProducts.slice(0, 4);
+  const bestSellers = safeProducts.filter(p => p?.badge === "Eng Ko'p Sotilgan" || p?.rating >= 4.8);
+  const kitchenProducts = safeProducts.filter(p => p?.category === "Oshxona Mebellari").slice(0, 4);
+  const officeProducts = safeProducts.filter(p => p?.category === "Ofis Mebellari").slice(0, 4);
+
+  // Yuklanayotgan holat
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-lightBg flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Mahsulotlar yuklanmoqda...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -42,33 +58,37 @@ function HomePage() {
         </div>
       </div>
 
-      {/* Tanlangan Mahsulotlar */}
-      <div className="bg-lightBg py-12 md:py-20 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
-          <SectionTitle label="Qo'lda Tanlangan" title="Tanlangan Mahsulotlar" sub="Bu mavsum uchun muharrirlarimiz tanlovi" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
-            {featured.map(p => <ProductCard key={p.id} product={p} />)}
-          </div>
-          <div className="text-center mt-10 md:mt-12">
-            <Link 
-              to="/products"
-              className="inline-block bg-transparent border-2 border-dark rounded-full px-8 md:px-10 py-3 md:py-3.5 text-[12px] md:text-[13px] font-bold cursor-pointer tracking-[0.08em] uppercase text-dark transition-all hover:bg-dark hover:text-white"
-            >
-              Barcha Mahsulotlarni Ko'rish
-            </Link>
+      {/* Tanlangan Mahsulotlar - faqat mahsulotlar bo'lsa ko'rsat */}
+      {safeProducts.length > 0 && (
+        <div className="bg-lightBg py-12 md:py-20 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <SectionTitle label="Qo'lda Tanlangan" title="Tanlangan Mahsulotlar" sub="Bu mavsum uchun muharrirlarimiz tanlovi" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
+              {featured.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
+            <div className="text-center mt-10 md:mt-12">
+              <Link 
+                to="/products"
+                className="inline-block bg-transparent border-2 border-dark rounded-full px-8 md:px-10 py-3 md:py-3.5 text-[12px] md:text-[13px] font-bold cursor-pointer tracking-[0.08em] uppercase text-dark transition-all hover:bg-dark hover:text-white"
+              >
+                Barcha Mahsulotlarni Ko'rish
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Oshxona Mebellari Bo'limi */}
-      <div className="bg-white py-12 md:py-20 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
-          <SectionTitle label="Oshxona Uchun" title="Oshxona Mebellari" sub="Zamonaviy va funksional oshxona mebellari" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
-            {kitchenProducts.map(p => <ProductCard key={p.id} product={p} />)}
+      {kitchenProducts.length > 0 && (
+        <div className="bg-white py-12 md:py-20 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <SectionTitle label="Oshxona Uchun" title="Oshxona Mebellari" sub="Zamonaviy va funksional oshxona mebellari" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
+              {kitchenProducts.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Maxsus Taklif Banner */}
       <div className="bg-dark py-12 md:py-20 px-4 md:px-8">
@@ -97,24 +117,28 @@ function HomePage() {
       </div>
 
       {/* Eng Ko'p Sotilganlar */}
-      <div className="bg-white py-12 md:py-20 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
-          <SectionTitle label="Eng Yuqori Reyting" title="Eng Ko'p Sotilganlar" sub="Mijozlarimiz sevishdan to'xtamaydigan buyumlar" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
-            {bestSellers.slice(0, 4).map(p => <ProductCard key={p.id} product={p} />)}
+      {bestSellers.length > 0 && (
+        <div className="bg-white py-12 md:py-20 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <SectionTitle label="Eng Yuqori Reyting" title="Eng Ko'p Sotilganlar" sub="Mijozlarimiz sevishdan to'xtamaydigan buyumlar" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
+              {bestSellers.slice(0, 4).map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Ofis Mebellari Bo'limi */}
-      <div className="bg-lightBg py-12 md:py-20 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
-          <SectionTitle label="Ofis Uchun" title="Ofis Mebellari" sub="Samarali ishlash uchun zamonaviy ofis mebellari" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
-            {officeProducts.map(p => <ProductCard key={p.id} product={p} />)}
+      {officeProducts.length > 0 && (
+        <div className="bg-lightBg py-12 md:py-20 px-4 md:px-8">
+          <div className="max-w-7xl mx-auto">
+            <SectionTitle label="Ofis Uchun" title="Ofis Mebellari" sub="Samarali ishlash uchun zamonaviy ofis mebellari" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">
+              {officeProducts.map(p => <ProductCard key={p.id} product={p} />)}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Mijozlar Fikrlari */}
       <div className="bg-[#f9f5ef] py-12 md:py-20 px-4 md:px-8">
