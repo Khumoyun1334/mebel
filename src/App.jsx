@@ -25,31 +25,26 @@ function AppContent() {
   const { showAdminModal, setShowAdminModal, isAdmin, loading } = useAdmin();
   useAdminShortcut();
 
-  // Supabase ulanishini tekshirish
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        console.log('🔍 Supabase ulanishi tekshirilmoqda...');
-        console.log('URL:', process.env.REACT_APP_SUPABASE_URL);
-        console.log('KEY:', process.env.REACT_APP_SUPABASE_ANON_KEY ? '✅ Bor' : '❌ Yoq');
-        
-        const { data, error, count } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true });
-        
-        if (error) {
-          console.log('❌ Supabase xatolik:', error.message);
-        } else {
-          console.log('✅ Supabase ga muvaffaqiyatli ulandi!');
-          console.log('📦 Mahsulotlar soni:', count);
-        }
-      } catch (err) {
-        console.log('❌ Xatolik:', err.message);
-      }
-    };
+const testConnection = async () => {
+  try {
+    console.log('🔍 Supabase ulanishi tekshirilmoqda...');
+    console.log('URL:', import.meta.env.VITE_SUPABASE_URL);
+    console.log('KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Bor' : '❌ Yoq');
     
-    testConnection();
-  }, []);
+    const { data, error, count } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) {
+      console.log('❌ Supabase xatolik:', error.message);
+    } else {
+      console.log('✅ Supabase ga muvaffaqiyatli ulandi!');
+      console.log('📦 Mahsulotlar soni:', count);
+    }
+  } catch (err) {
+    console.log('❌ Xatolik:', err.message);
+  }
+};
 
   if (loading) {
     return (
