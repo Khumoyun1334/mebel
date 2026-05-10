@@ -1,4 +1,5 @@
-import React from 'react';
+// src/App.jsx
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
@@ -21,50 +22,61 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 
 function AppContent() {
-  const { showAdminModal, setShowAdminModal, isAdmin } = useAdmin();
+  const { showAdminModal, setShowAdminModal, isAdmin, loading } = useAdmin();
   useAdminShortcut();
 
-  // WebSocket va MetaMask xatolarini suppress qilish
-  React.useEffect(() => {
-    const originalError = console.error;
-    console.error = (...args) => {
-      if (typeof args[0] === 'string' && (
-        args[0].includes('WebSocket connection failed') ||
-        args[0].includes('WebSocket connection to') ||
-        args[0].includes('Failed to connect to MetaMask') ||
-        args[0].includes('StreamMiddleware')
-      )) {
-        return;
+
+    useEffect(() => {
+    const testConnection = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('count', { count: 'exact', head: true });
+        
+        if (error) {
+          console.log('❌ Supabase ga ulanishda xatolik:', error.message);
+        } else {
+          console.log('✅ Supabase ga muvaffaqiyatli ulandi!');
+          console.log('📦 Mahsulotlar soni:', data);
+        }
+      } catch (err) {
+        console.log('❌ Xatolik:', err.message);
       }
-      originalError.apply(console, args);
     };
-    return () => {
-      console.error = originalError;
-    };
+    
+    testConnection();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-lightBg flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Ma'lumotlar yuklanmoqda...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-serif bg-lightBg min-h-screen flex flex-col">
-      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
       <Navbar />
       <main className="flex-1">
-     <Routes>
-  <Route path="/" element={<HomePage />} />
-  <Route path="/products" element={<ProductsPage />} />
-  <Route path="/product/:id" element={<ProductDetailPage />} />
-  <Route path="/categories" element={<CategoriesPage />} /> {/* Kategoriyalar sahifasi */}
-  <Route path="/contact" element={<ContactPage />} />        {/* Bog'lanish sahifasi */}
-  <Route path="/cart" element={<CartPage />} />
-  <Route path="/wishlist" element={<WishlistPage />} />
-  <Route path="/about" element={<AboutPage />} />
-</Routes>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
       <Footer />
 
-      {/* Admin Modal */}
       {showAdminModal && <AdminModal onClose={() => setShowAdminModal(false)} />}
-      
-      {/* Admin Panel */}
       {isAdmin && <AdminPanel onClose={() => setShowAdminModal(false)} />}
     </div>
   );

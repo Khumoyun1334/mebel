@@ -2,10 +2,27 @@ import React, { useState } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { useToast } from '../context/ToastContext';
 import ProductFormModal from './ProductFormModal';
-import { FiPackage, FiShoppingCart, FiCheckCircle, FiXCircle, FiDollarSign } from 'react-icons/fi';
+import { 
+  FiPackage, FiShoppingCart, FiCheckCircle, FiXCircle, 
+  FiDollarSign, FiMail, FiMessageSquare, FiEye, FiTrash2,
+  FiClock, FiUser, FiPhone, FiMail as FiMailIcon, FiTag,
+  FiEdit2, FiPlus
+} from 'react-icons/fi';
 
 function AdminPanel({ onClose }) {
-  const { products, orders, logoutAdmin, updateOrderStatus, deleteOrder, getStats } = useAdmin();
+  const { 
+    products, 
+    orders, 
+    contactMessages,
+    logoutAdmin, 
+    updateOrderStatus, 
+    deleteOrder,
+    deleteProduct,
+    updateMessageStatus,
+    deleteMessage,
+    getStats 
+  } = useAdmin();
+  
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('orders');
   const [editingProduct, setEditingProduct] = useState(null);
@@ -13,7 +30,13 @@ function AdminPanel({ onClose }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const stats = getStats();
+  // contactMessages undefined bo'lsa, default qiymat
+  const messages = contactMessages || [];
+  const stats = getStats ? getStats() : { 
+    totalOrders: 0, pendingOrders: 0, completedOrders: 0, 
+    cancelledOrders: 0, totalRevenue: 0, unreadMessages: 0 
+  };
+  
   const categories = ['all', 'Oshxona Mebellari', 'Yotoqxona Mebellari', 'Mehmonxona Mebellari', 'Yumshoq Mebellar', 'Ofis Mebellari'];
   const categoryNames = {
     'all': 'Barchasi',
@@ -38,7 +61,7 @@ function AdminPanel({ onClose }) {
     cancelled: 'Bekor qilingan'
   };
 
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = (products || []).filter(p => {
     const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCategory = categoryFilter === 'all' || p.category === categoryFilter;
     return matchSearch && matchCategory;
@@ -73,6 +96,18 @@ function AdminPanel({ onClose }) {
     }
   };
 
+  const handleMarkAsRead = (messageId) => {
+    updateMessageStatus(messageId, 'read');
+    showToast("Xabar o'qilgan deb belgilandi", "success");
+  };
+
+  const handleDeleteMessage = (messageId) => {
+    if (window.confirm('Xabarni o\'chirmoqchimisiz?')) {
+      deleteMessage(messageId);
+      showToast("Xabar o'chirildi", "error");
+    }
+  };
+
   const handleLogout = () => {
     logoutAdmin();
     showToast("Admin paneldan chiqildi", "info");
@@ -87,9 +122,15 @@ function AdminPanel({ onClose }) {
           <div className="flex flex-wrap justify-between items-center p-4 md:p-6 gap-3">
             <div>
               <h2 className="text-xl md:text-2xl font-serif text-dark">Admin Panel</h2>
-              <p className="text-xs md:text-sm text-gray-500 mt-1">Mahsulotlar va buyurtmalarni boshqaring</p>
+              <p className="text-xs md:text-sm text-gray-500 mt-1">Mahsulotlar, buyurtmalar va xabarlarni boshqaring</p>
             </div>
             <div className="flex gap-2">
+              <button
+                onClick={handleAddProduct}
+                className="bg-success text-white px-4 md:px-5 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-semibold hover:bg-green-700 transition-all flex items-center gap-1"
+              >
+                <FiPlus size={14} /> Yangi Mahsulot
+              </button>
               <button
                 onClick={handleLogout}
                 className="border border-red-500 text-red-500 px-4 md:px-5 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-semibold hover:bg-red-500 hover:text-white transition-all"
@@ -101,30 +142,40 @@ function AdminPanel({ onClose }) {
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-gray-100 px-4 md:px-6">
+          <div className="flex overflow-x-auto border-b border-gray-100 px-4 md:px-6 gap-1">
             <button
               onClick={() => setActiveTab('orders')}
-              className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium transition-all ${
+              className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium transition-all whitespace-nowrap ${
                 activeTab === 'orders' 
                   ? 'text-accent border-b-2 border-accent' 
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              📦 Buyurtmalar ({orders.length})
+              📦 Buyurtmalar ({orders?.length || 0})
             </button>
             <button
               onClick={() => setActiveTab('products')}
-              className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium transition-all ${
+              className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium transition-all whitespace-nowrap ${
                 activeTab === 'products' 
                   ? 'text-accent border-b-2 border-accent' 
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              🛋️ Mahsulotlar ({products.length})
+              🛋️ Mahsulotlar ({products?.length || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab('messages')}
+              className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium transition-all whitespace-nowrap ${
+                activeTab === 'messages' 
+                  ? 'text-accent border-b-2 border-accent' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              📨 Xabarlar ({messages.filter(m => m.status === 'unread').length})
             </button>
             <button
               onClick={() => setActiveTab('stats')}
-              className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium transition-all ${
+              className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base font-medium transition-all whitespace-nowrap ${
                 activeTab === 'stats' 
                   ? 'text-accent border-b-2 border-accent' 
                   : 'text-gray-500 hover:text-gray-700'
@@ -138,7 +189,7 @@ function AdminPanel({ onClose }) {
         {/* Orders Tab */}
         {activeTab === 'orders' && (
           <div className="p-4 md:p-6">
-            {orders.length === 0 ? (
+            {!orders || orders.length === 0 ? (
               <div className="text-center py-10 text-gray-500">
                 <FiPackage size={48} className="mx-auto mb-3 text-gray-300" />
                 <p>Hali hech qanday buyurtma yo'q</p>
@@ -150,20 +201,26 @@ function AdminPanel({ onClose }) {
                     <div className="flex flex-wrap justify-between items-start gap-3 mb-3">
                       <div>
                         <span className="text-xs text-gray-400">#{order.id}</span>
-                        <p className="font-semibold text-dark">{order.customerName}</p>
-                        <p className="text-xs text-gray-400">{order.customerPhone}</p>
+                        <p className="font-semibold text-dark flex items-center gap-1">
+                          <FiUser size={12} /> {order.customerName}
+                        </p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <FiPhone size={10} /> {order.customerPhone}
+                        </p>
                         <p className="text-xs text-gray-400">{order.customerAddress}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-accent">${order.total.toLocaleString()}</p>
-                        <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleString()}</p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <FiClock size={10} /> {new Date(order.createdAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                     
                     <div className="border-t border-gray-100 pt-3 mt-2">
                       <p className="text-xs text-gray-500 mb-2">Mahsulotlar:</p>
                       <div className="space-y-1">
-                        {order.items.map((item, idx) => (
+                        {order.items?.map((item, idx) => (
                           <div key={idx} className="text-sm flex justify-between">
                             <span>{item.name} x{item.qty}</span>
                             <span className="text-dark">${(item.price * item.qty).toLocaleString()}</span>
@@ -187,9 +244,9 @@ function AdminPanel({ onClose }) {
                       </div>
                       <button
                         onClick={() => handleDeleteOrder(order.id)}
-                        className="text-red-500 text-xs hover:underline"
+                        className="text-red-500 text-xs hover:underline flex items-center gap-1"
                       >
-                        O'chirish
+                        <FiTrash2 size={12} /> O'chirish
                       </button>
                     </div>
                   </div>
@@ -218,21 +275,13 @@ function AdminPanel({ onClose }) {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Mahsulot qidirish..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="border border-gray-300 rounded-full px-4 py-1.5 text-sm outline-none focus:border-accent w-48"
-                />
-                <button
-                  onClick={handleAddProduct}
-                  className="bg-success text-white px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-green-700 transition-all"
-                >
-                  + Yangi
-                </button>
-              </div>
+              <input
+                type="text"
+                placeholder="Mahsulot qidirish..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border border-gray-300 rounded-full px-4 py-1.5 text-sm outline-none focus:border-accent w-48"
+              />
             </div>
 
             <div className="overflow-x-auto">
@@ -248,9 +297,9 @@ function AdminPanel({ onClose }) {
                 </thead>
                 <tbody>
                   {filteredProducts.map(product => (
-                    <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-3 px-3">
-                        <img src={product.img} alt={product.name} className="w-10 h-10 rounded-lg object-cover" />
+                        <img src={product.img || product.images?.[0]} alt={product.name} className="w-10 h-10 rounded-lg object-cover" />
                       </td>
                       <td className="py-3 px-3 font-medium text-dark">{product.name}</td>
                       <td className="py-3 px-3 text-gray-500 text-xs">{product.category}</td>
@@ -259,19 +308,19 @@ function AdminPanel({ onClose }) {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEditProduct(product)}
-                            className="text-blue-500 hover:text-blue-700 text-xs"
+                            className="text-blue-500 hover:text-blue-700 text-xs flex items-center gap-1"
                           >
-                            ✏️
+                            <FiEdit2 size={12} /> Tahrirlash
                           </button>
                           <button
                             onClick={() => handleDeleteProduct(product.id, product.name)}
-                            className="text-red-500 hover:text-red-700 text-xs"
+                            className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1"
                           >
-                            🗑️
+                            <FiTrash2 size={12} /> O'chirish
                           </button>
                         </div>
-                       </td>
-                     </tr>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -285,36 +334,138 @@ function AdminPanel({ onClose }) {
           </div>
         )}
 
+        {/* Messages Tab */}
+        {activeTab === 'messages' && (
+          <div className="p-4 md:p-6">
+            <div className="mb-4 flex justify-between items-center">
+              <p className="text-sm text-gray-500">
+                Jami: {messages.length} ta xabar | 
+                O'qilmagan: <span className="text-accent font-semibold">{messages.filter(m => m.status === 'unread').length}</span>
+              </p>
+            </div>
+            
+            {messages.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                <div className="text-5xl mb-3">📭</div>
+                <p>Hali hech qanday xabar yo'q</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map(msg => (
+                  <div 
+                    key={msg.id} 
+                    className={`border rounded-xl p-5 transition-all ${
+                      msg.status === 'unread' ? 'border-accent bg-accent/5 shadow-sm' : 'border-gray-100 bg-white'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-dark">{msg.name}</h3>
+                          {msg.status === 'unread' && (
+                            <span className="bg-accent text-white text-xs px-2 py-0.5 rounded-full">Yangi</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 flex-wrap">
+                          <p className="text-xs text-gray-400 flex items-center gap-1">
+                            <FiMailIcon size={10} /> {msg.email}
+                          </p>
+                          <p className="text-xs text-gray-400 flex items-center gap-1">
+                            <FiPhone size={10} /> {msg.phone}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <FiClock size={10} /> {new Date(msg.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                        <FiTag size={12} /> Mavzu: {msg.subject}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                      <p className="text-gray-600 text-sm leading-relaxed">{msg.message}</p>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      {msg.status === 'unread' && (
+                        <button
+                          onClick={() => handleMarkAsRead(msg.id)}
+                          className="text-accent text-sm hover:underline flex items-center gap-1"
+                        >
+                          <FiEye size={12} /> O'qilgan deb belgilash
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="text-red-500 text-sm hover:underline flex items-center gap-1"
+                      >
+                        <FiTrash2 size={12} /> O'chirish
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Stats Tab */}
         {activeTab === 'stats' && (
           <div className="p-4 md:p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
               <div className="bg-blue-50 rounded-xl p-3 md:p-4 text-center">
                 <FiShoppingCart size={24} className="mx-auto mb-2 text-blue-500" />
-                <p className="text-2xl font-bold text-blue-600">{stats.totalOrders}</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.totalOrders || 0}</p>
                 <p className="text-xs text-gray-500">Jami Buyurtmalar</p>
               </div>
               <div className="bg-yellow-50 rounded-xl p-3 md:p-4 text-center">
-                <FiPackage size={24} className="mx-auto mb-2 text-yellow-500" />
-                <p className="text-2xl font-bold text-yellow-600">{stats.pendingOrders}</p>
+                <FiClock size={24} className="mx-auto mb-2 text-yellow-500" />
+                <p className="text-2xl font-bold text-yellow-600">{stats.pendingOrders || 0}</p>
                 <p className="text-xs text-gray-500">Kutilayotgan</p>
               </div>
               <div className="bg-green-50 rounded-xl p-3 md:p-4 text-center">
                 <FiCheckCircle size={24} className="mx-auto mb-2 text-green-500" />
-                <p className="text-2xl font-bold text-green-600">{stats.completedOrders}</p>
+                <p className="text-2xl font-bold text-green-600">{stats.completedOrders || 0}</p>
                 <p className="text-xs text-gray-500">Bajarilgan</p>
+              </div>
+              <div className="bg-red-50 rounded-xl p-3 md:p-4 text-center">
+                <FiXCircle size={24} className="mx-auto mb-2 text-red-500" />
+                <p className="text-2xl font-bold text-red-600">{stats.cancelledOrders || 0}</p>
+                <p className="text-xs text-gray-500">Bekor qilingan</p>
               </div>
               <div className="bg-accent/10 rounded-xl p-3 md:p-4 text-center">
                 <FiDollarSign size={24} className="mx-auto mb-2 text-accent" />
-                <p className="text-2xl font-bold text-accent">${stats.totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-accent">${(stats.totalRevenue || 0).toLocaleString()}</p>
                 <p className="text-xs text-gray-500">Umumiy Daromad</p>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-4 md:p-5">
+            <div className="bg-accent/10 rounded-xl p-4 md:p-5 mb-6">
+              <h3 className="font-semibold text-dark mb-3 flex items-center gap-2">
+                <FiMessageSquare size={18} /> Xabarlar statistikasi
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-accent">{messages.length}</p>
+                  <p className="text-xs text-gray-500">Jami Xabarlar</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-orange-500">{messages.filter(m => m.status === 'unread').length}</p>
+                  <p className="text-xs text-gray-500">O'qilmagan Xabarlar</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 md:p-5 mb-6">
               <h3 className="font-semibold text-dark mb-3">So'nggi Buyurtmalar</h3>
               <div className="space-y-2">
-                {orders.slice(0, 5).map(order => (
+                {(orders || []).slice(0, 5).map(order => (
                   <div key={order.id} className="flex justify-between items-center py-2 border-b border-gray-200">
                     <div>
                       <p className="text-sm font-medium text-dark">{order.customerName}</p>
@@ -328,8 +479,31 @@ function AdminPanel({ onClose }) {
                     </div>
                   </div>
                 ))}
-                {orders.length === 0 && (
+                {(orders || []).length === 0 && (
                   <p className="text-center text-gray-400 py-4">Hali buyurtmalar yo'q</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 md:p-5">
+              <h3 className="font-semibold text-dark mb-3">So'nggi Xabarlar</h3>
+              <div className="space-y-2">
+                {messages.slice(0, 5).map(msg => (
+                  <div key={msg.id} className="flex justify-between items-center py-2 border-b border-gray-200">
+                    <div>
+                      <p className="text-sm font-medium text-dark">{msg.name}</p>
+                      <p className="text-xs text-gray-400">{msg.subject}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">{new Date(msg.createdAt).toLocaleDateString()}</p>
+                      {msg.status === 'unread' && (
+                        <span className="text-xs text-accent font-semibold">Yangi</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {messages.length === 0 && (
+                  <p className="text-center text-gray-400 py-4">Hali xabarlar yo'q</p>
                 )}
               </div>
             </div>

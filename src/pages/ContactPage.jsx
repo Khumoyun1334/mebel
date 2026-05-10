@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useAdmin } from '../context/AdminContext';
 import { useToast } from '../context/ToastContext';
-import { FiMapPin, FiPhone, FiMail, FiClock, FiSend, FiCheck } from 'react-icons/fi';
+import { FiMapPin, FiPhone, FiMail, FiClock, FiSend } from 'react-icons/fi';
 
 function ContactPage() {
+  const { addContactMessage } = useAdmin();
   const { showToast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -28,9 +30,17 @@ function ContactPage() {
 
     setIsSubmitting(true);
     
-    // Simulyatsiya qilingan so'rov
+    // Xabarni admin panelga yuborish
+    addContactMessage({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone || 'Ko\'rsatilmagan',
+      subject: formData.subject || 'Mavzu yo\'q',
+      message: formData.message
+    });
+    
     setTimeout(() => {
-      showToast("Xabaringiz muvaffaqiyatli yuborildi! Tez orada siz bilan bog'lanamiz.", "success");
+      showToast("Xabaringiz muvaffaqiyatli yuborildi! Admin tez orada siz bilan bog'lanadi.", "success");
       setFormData({
         name: '',
         email: '',
@@ -39,7 +49,7 @@ function ContactPage() {
         message: ''
       });
       setIsSubmitting(false);
-    }, 1500);
+    }, 500);
   };
 
   const contactInfo = [
@@ -72,7 +82,7 @@ function ContactPage() {
   return (
     <div className="min-h-screen bg-lightBg">
       {/* Hero Qismi */}
-      <div className="relative bg-dark py-20 px-4 md:px-8 text-center overflow-hidden">
+      <div className="relative bg-dark py-20 mt-5 px-4 md:px-8 text-center overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-accent/20 animate-pulse"></div>
           <div className="absolute bottom-10 right-10 w-48 h-48 rounded-full bg-accent/20 animate-pulse delay-1000"></div>
@@ -148,6 +158,7 @@ function ContactPage() {
                       onChange={handleChange}
                       placeholder="Ism familiyangiz"
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all bg-gray-50/50 focus:bg-white"
+                      required
                     />
                   </div>
                   <div>
@@ -161,6 +172,7 @@ function ContactPage() {
                       onChange={handleChange}
                       placeholder="email@misol.com"
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all bg-gray-50/50 focus:bg-white"
+                      required
                     />
                   </div>
                 </div>
@@ -205,6 +217,7 @@ function ContactPage() {
                     rows={5}
                     placeholder="Xabaringizni yozing..."
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all bg-gray-50/50 focus:bg-white resize-none"
+                    required
                   />
                 </div>
 

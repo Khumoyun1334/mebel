@@ -1,8 +1,8 @@
 import React from 'react';
-import Footer from '../components/Footer';
+import { Link } from 'react-router-dom';
 import { CATEGORIES } from '../data/data';
 
-function CategoriesPage({ setPage }) {
+function CategoriesPage() {
   const categoryIcons = {
     "Oshxona Mebellari": "🍳",
     "Yotoqxona Mebellari": "🛏️",
@@ -13,7 +13,7 @@ function CategoriesPage({ setPage }) {
 
   return (
     <div className="min-h-screen bg-lightBg">
-      <div className="bg-dark py-15 px-8 text-center">
+      <div className="bg-dark mt-10 py-15 px-8 text-center">
         <h1 className="text-[clamp(32px,5vw,56px)] font-serif font-normal text-white">Kolleksiyalar</h1>
         <p className="text-gray-400 text-sm mt-3">Har bir xona uchun mukammal mebelni toping</p>
       </div>
@@ -21,10 +21,10 @@ function CategoriesPage({ setPage }) {
       <div className="max-w-7xl mx-auto px-8 py-15">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {CATEGORIES.map(cat => (
-            <div 
+            <Link 
               key={cat.name} 
-              onClick={() => setPage("Products")} 
-              className="rounded-2xl overflow-hidden cursor-pointer relative h-[400px] shadow-lg transition-transform hover:-translate-y-2 group"
+              to={`/products?category=${encodeURIComponent(cat.name)}`}
+              className="rounded-2xl overflow-hidden cursor-pointer relative h-[400px] shadow-lg transition-transform hover:-translate-y-2 group block"
             >
               <img src={cat.img} alt={cat.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-dark/85 via-dark/40 to-transparent" />
@@ -36,12 +36,10 @@ function CategoriesPage({ setPage }) {
                   KO'RISH →
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
-      
-      <Footer setPage={setPage} />
     </div>
   );
 }

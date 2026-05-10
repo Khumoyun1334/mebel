@@ -44,7 +44,7 @@ function AboutPage({ setPage }) {
         </div>
       </div>
       
-      <Footer setPage={setPage} />
+
     </div>
   );
 }

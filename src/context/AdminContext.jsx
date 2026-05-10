@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { PRODUCTS as initialProducts } from '../data/data';
+import { sendTelegramMessage, formatOrderMessage, formatContactMessage } from '../services/telegramService';
 
 const AdminContext = createContext();
 
@@ -10,6 +11,10 @@ export function AdminProvider({ children }) {
   });
   const [orders, setOrders] = useState(() => {
     const saved = localStorage.getItem('luxehome_orders');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [contactMessages, setContactMessages] = useState(() => {
+    const saved = localStorage.getItem('luxehome_messages');
     return saved ? JSON.parse(saved) : [];
   });
   const [isAdmin, setIsAdmin] = useState(() => {
@@ -24,6 +29,10 @@ export function AdminProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('luxehome_orders', JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('luxehome_messages', JSON.stringify(contactMessages));
+  }, [contactMessages]);
 
   useEffect(() => {
     localStorage.setItem('luxehome_admin', isAdmin);
@@ -71,8 +80,8 @@ export function AdminProvider({ children }) {
     return products.find(p => p.id === parseInt(id));
   };
 
-  // Buyurtma qo'shish
-  const addOrder = (orderData) => {
+  // Buyurtma qo'shish + Telegramga yuborish
+  const addOrder = async (orderData) => {
     const newOrder = {
       id: Date.now(),
       ...orderData,
@@ -80,19 +89,70 @@ export function AdminProvider({ children }) {
       createdAt: new Date().toISOString()
     };
     setOrders(prev => [newOrder, ...prev]);
+    
+    // Telegramga yuborish
+    const message = formatOrderMessage(newOrder);
+    await sendTelegramMessage(message);
+    
     return newOrder;
   };
 
-  // Buyurtma statusini yangilash
-  const updateOrderStatus = (orderId, status) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, status, updatedAt: new Date().toISOString() } : order
-    ));
+  // Buyurtma statusini yangilash + Telegramga yuborish
+  const updateOrderStatus = async (orderId, status) => {
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      const updatedOrder = { ...order, status, updatedAt: new Date().toISOString() };
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? updatedOrder : o
+      ));
+      
+      // Status o'zgarishi haqida Telegramga yuborish
+      const statusMessage = `
+🔄 <b>BUYURTMA HOLATI O'ZGARDI</b> 🔄
+
+<b>📋 Buyurtma #${orderId}</b>
+<b>👤 Mijoz:</b> ${order.customerName}
+<b>📊 Eski holat:</b> ${getStatusName(order.status)}
+<b>📊 Yangi holat:</b> ${getStatusName(status)}
+
+🔗 <a href="${window.location.origin}/admin">Admin panelga o'tish</a>
+      `;
+      await sendTelegramMessage(statusMessage);
+    }
   };
 
   // Buyurtmani o'chirish
   const deleteOrder = (orderId) => {
-    setOrders(prev => prev.filter(order => order.id !== orderId));
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+  };
+
+  // Contact xabar qo'shish + Telegramga yuborish
+  const addContactMessage = async (messageData) => {
+    const newMessage = {
+      id: Date.now(),
+      ...messageData,
+      status: 'unread',
+      createdAt: new Date().toISOString()
+    };
+    setContactMessages(prev => [newMessage, ...prev]);
+    
+    // Telegramga yuborish
+    const message = formatContactMessage(newMessage);
+    await sendTelegramMessage(message);
+    
+    return newMessage;
+  };
+
+  // Xabar statusini yangilash
+  const updateMessageStatus = (messageId, status) => {
+    setContactMessages(prev => prev.map(msg => 
+      msg.id === messageId ? { ...msg, status, readAt: status === 'read' ? new Date().toISOString() : undefined } : msg
+    ));
+  };
+
+  // Xabarni o'chirish
+  const deleteMessage = (messageId) => {
+    setContactMessages(prev => prev.filter(msg => msg.id !== messageId));
   };
 
   // Statistikalar
@@ -104,20 +164,33 @@ export function AdminProvider({ children }) {
     const totalRevenue = orders
       .filter(o => o.status === 'completed')
       .reduce((sum, o) => sum + o.total, 0);
+    const unreadMessages = contactMessages.filter(m => m.status === 'unread').length;
     
     return {
       totalOrders,
       pendingOrders,
       completedOrders,
       cancelledOrders,
-      totalRevenue
+      totalRevenue,
+      unreadMessages
     };
+  };
+
+  const getStatusName = (status) => {
+    const names = {
+      pending: 'Kutilmoqda',
+      processing: 'Jarayonda',
+      completed: 'Bajarildi',
+      cancelled: 'Bekor qilingan'
+    };
+    return names[status] || status;
   };
 
   return (
     <AdminContext.Provider value={{
       products,
       orders,
+      contactMessages,
       isAdmin,
       showAdminModal,
       setShowAdminModal,
@@ -130,6 +203,9 @@ export function AdminProvider({ children }) {
       addOrder,
       updateOrderStatus,
       deleteOrder,
+      addContactMessage,
+      updateMessageStatus,
+      deleteMessage,
       getStats
     }}>
       {children}

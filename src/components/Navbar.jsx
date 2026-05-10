@@ -53,10 +53,10 @@ function Navbar() {
       <nav
         style={{ background: navBg }}
         className={`fixed top-0 left-0 right-0 z-[1000] backdrop-blur-xl transition-all duration-300 ${
-          scrolled ? "shadow-md border-accent/15 " : " border-transparent"
+          scrolled ? "shadow-md border-accent/15" : "border-transparent"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center h-[72px] gap-4 md:gap-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between h-[72px] gap-4 md:gap-10">
           {/* Logo */}
           <Link to="/" className="cursor-pointer flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 md:w-9 md:h-9 bg-accent rounded-lg flex items-center justify-center">
@@ -85,8 +85,8 @@ function Navbar() {
             ))}
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1 md:gap-2 ml-auto">
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-1 md:gap-2">
             {searchOpen ? (
               <form onSubmit={handleSearch} className="flex items-center bg-cream rounded-full py-1.5 px-3 gap-2">
                 <input
@@ -131,54 +131,108 @@ function Navbar() {
                 </span>
               )}
             </Link>
+          </div>
 
-            {/* Admin Button */}
-          
+          {/* Mobile Actions - humburger menyu faqat mobil uchun */}
+          <div className="flex md:hidden items-center gap-2">
+            {/* Mobile Search Button */}
+            <button onClick={() => setSearchOpen(!searchOpen)} className={`bg-transparent border-none cursor-pointer p-2 flex items-center ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
+              <FiSearch size={18} />
+            </button>
 
-            <button onClick={() => setMobileOpen(!mobileOpen)} className={`md:hidden bg-transparent border-none cursor-pointer p-2 flex items-center ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
+            {/* Mobile Cart Button */}
+            <Link to="/cart" className="relative">
+              <button className={`bg-transparent border-none cursor-pointer p-2 flex items-center ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
+                <FiShoppingCart size={18} />
+                {count > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-accent text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center font-bold">
+                    {count}
+                  </span>
+                )}
+              </button>
+            </Link>
+
+            {/* Mobile Menu Button */}
+            <button onClick={() => setMobileOpen(!mobileOpen)} className={`bg-transparent border-none cursor-pointer p-2 flex items-center ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
               {mobileOpen ? <FiX size={22} /> : <FiMenu size={22} />}
             </button>
           </div>
         </div>
 
-        {/* Search Bar Expanded */}
+        {/* Mobile Search Bar - mobil uchun alohida */}
         {searchOpen && (
-          <div className="border-t border-accent/15 py-3 px-4 md:px-8 bg-lightBg/98">
-            <input
-              autoFocus
-              value={searchQ}
-              onChange={e => setSearchQ(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && searchQ) { handleSearch(e); } }}
-              placeholder="Mebel, kategoriyalarni qidirish..."
-              className="w-full border-none border-b-2 border-accent outline-none text-base py-2 bg-transparent text-dark font-sans"
-            />
+          <div className="md:hidden border-t border-accent/15 py-3 px-4 bg-lightBg/98">
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+              <input
+                value={searchQ}
+                onChange={e => setSearchQ(e.target.value)}
+                placeholder="Mahsulot qidirish..."
+                autoFocus
+                className="flex-1 border border-gray-200 rounded-full px-4 py-2 text-sm outline-none focus:border-accent bg-white"
+              />
+              <button type="submit" className="bg-accent text-white px-4 py-2 rounded-full text-sm font-semibold">
+                Qidirish
+              </button>
+            </form>
           </div>
         )}
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - to'g'rilangan */}
       {mobileOpen && (
-        <div className={`fixed inset-0 z-[999] pt-20 flex flex-col gap-1 px-8 py-6 ${darkMode ? "bg-dark" : "bg-lightBg"}`}>
+        <div className={`fixed top-[72px] left-0 right-0 z-[999] flex flex-col ${darkMode ? "bg-dark" : "bg-white"} shadow-xl animate-slideDown`}>
           {navLinks.map(link => (
             <Link
               key={link.path}
               to={link.path}
               onClick={() => setMobileOpen(false)}
-              className={`block py-3 text-xl font-medium border-b ${darkMode ? "border-gray-800 text-gray-300" : "border-gray-100 text-dark"} ${
+              className={`block py-4 px-6 text-base font-medium border-b ${darkMode ? "border-gray-800 text-gray-300 hover:bg-gray-800/50" : "border-gray-100 text-dark hover:bg-gray-50"} ${
                 location.pathname === link.path ? "text-accent" : ""
-              }`}
+              } transition-colors`}
             >
               {link.label}
             </Link>
           ))}
-       
+          
+          {/* Mobile Wishlist */}
+          <Link
+            to="/wishlist"
+            onClick={() => setMobileOpen(false)}
+            className={`flex items-center gap-3 py-4 px-6 text-base font-medium border-b ${darkMode ? "border-gray-800 text-gray-300" : "border-gray-100 text-dark"} transition-colors`}
+          >
+            <FiHeart size={18} />
+            Istaklar Ro'yxati
+            {wCount > 0 && (
+              <span className="bg-red-500 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center">
+                {wCount}
+              </span>
+            )}
+          </Link>
+
+          {/* Mobile Dark Mode Toggle */}
+          <button
+            onClick={() => { setDarkMode(!darkMode); setMobileOpen(false); }}
+            className={`flex items-center gap-3 py-4 px-6 text-base font-medium border-b ${darkMode ? "border-gray-800 text-gray-300" : "border-gray-100 text-dark"} transition-colors`}
+          >
+            {darkMode ? <FiSun size={18} /> : <FiMoon size={18} />}
+            {darkMode ? "Yorug' rejim" : "Tungi rejim"}
+          </button>
         </div>
       )}
 
       <style>{`
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .mobile-toggle { display: flex !important; }
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slideDown {
+          animation: slideDown 0.3s ease;
         }
       `}</style>
     </>

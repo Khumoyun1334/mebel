@@ -7,12 +7,12 @@ import { FiSearch } from 'react-icons/fi';
 
 function ProductsPage() {
   const { products } = useAdmin();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   
   const [filter, setFilter] = useState("All");
   const [sort, setSort] = useState("featured");
-  const [search, setSearch] = useState(searchParams.get('q') || "");
+  const [search, setSearch] = useState("");
   
   const categories = ["All", "Oshxona Mebellari", "Yotoqxona Mebellari", "Mehmonxona Mebellari", "Yumshoq Mebellar", "Ofis Mebellari"];
   const categoryMap = {
@@ -24,12 +24,28 @@ function ProductsPage() {
     "Ofis Mebellari": "Ofis Mebellari"
   };
 
+  // URL dan category parametrini o'qish
   useEffect(() => {
-    const q = searchParams.get('q');
-    if (q) {
-      setSearch(q);
+    const categoryParam = searchParams.get('category');
+    if (categoryParam && categories.includes(categoryParam)) {
+      setFilter(categoryParam);
+    }
+    
+    const searchParam = searchParams.get('q');
+    if (searchParam) {
+      setSearch(searchParam);
     }
   }, [searchParams]);
+
+  // Filter o'zgarganda URL ni yangilash
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+    if (newFilter !== "All") {
+      setSearchParams({ category: newFilter });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   let filteredProducts = products.filter(p => {
     const catMatch = filter === "All" || p.category === filter;
@@ -43,9 +59,14 @@ function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-lightBg">
-      <div className="bg-dark py-12 md:py-15 px-4 md:px-8 text-center">
+      <div className="bg-dark py-12 mt-10 md:py-15 px-4 md:px-8 text-center">
         <p className="text-[11px] font-bold tracking-[0.12em] uppercase text-accent mb-3">Bizning Do'kon</p>
-        <h1 className="text-3xl md:text-[clamp(32px,5vw,56px)] font-serif font-normal text-white">Barcha Mahsulotlar</h1>
+        <h1 className="text-3xl md:text-[clamp(32px,5vw,56px)] font-serif font-normal text-white">
+          {filter !== "All" ? filter : "Barcha Mahsulotlar"}
+        </h1>
+        {filter !== "All" && (
+          <p className="text-gray-400 text-sm mt-2">{filter} bo'limidagi mahsulotlar</p>
+        )}
       </div>
       
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-10">
@@ -54,9 +75,9 @@ function ProductsPage() {
             {categories.map(c => (
               <button 
                 key={c} 
-                onClick={() => setFilter(c)} 
+                onClick={() => handleFilterChange(c)} 
                 className={`px-4 md:px-5 py-1.5 md:py-2 rounded-full border-[1.5px] text-[12px] md:text-[13px] font-medium cursor-pointer transition-all ${
-                  filter === c ? "bg-accent border-accent text-white" : "border-gray-300 bg-white text-gray-600"
+                  filter === c ? "bg-accent border-accent text-white" : "border-gray-300 bg-white text-gray-600 hover:border-accent hover:text-accent"
                 }`}
               >
                 {categoryMap[c]}
@@ -70,13 +91,13 @@ function ProductsPage() {
                 value={search} 
                 onChange={e => setSearch(e.target.value)} 
                 placeholder="Qidirish…" 
-                className="border-[1.5px] border-gray-300 rounded-full pl-9 pr-4 py-2 text-[13px] outline-none font-sans w-[160px] md:w-[180px]" 
+                className="border-[1.5px] border-gray-300 rounded-full pl-9 pr-4 py-2 text-[13px] outline-none font-sans w-[160px] md:w-[180px] focus:border-accent" 
               />
             </div>
             <select 
               value={sort} 
               onChange={e => setSort(e.target.value)} 
-              className="border-[1.5px] border-gray-300 rounded-full px-3 md:px-4 py-2 text-[12px] md:text-[13px] outline-none cursor-pointer bg-white font-sans"
+              className="border-[1.5px] border-gray-300 rounded-full px-3 md:px-4 py-2 text-[12px] md:text-[13px] outline-none cursor-pointer bg-white font-sans focus:border-accent"
             >
               <option value="featured">Tavsiya etilgan</option>
               <option value="price-asc">Narxi: Arzondan Qimmatga</option>
@@ -88,10 +109,25 @@ function ProductsPage() {
         
         <p className="text-[13px] text-gray-400 mb-6 md:mb-7">{filteredProducts.length} ta mahsulot topildi</p>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">
-          {filteredProducts.map(p => <ProductCard key={p.id} product={p} />)}
-        </div>
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-xl font-serif text-dark mb-2">Hech qanday mahsulot topilmadi</h3>
+            <p className="text-gray-500 mb-6">Bu kategoriyada hozircha mahsulot mavjud emas</p>
+            <button 
+              onClick={() => handleFilterChange("All")}
+              className="bg-accent text-white px-6 py-2 rounded-full hover:bg-accent-dark transition-colors"
+            >
+              Barcha mahsulotlarni ko'rish
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">
+            {filteredProducts.map(p => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
       </div>
+      
     </div>
   );
 }
