@@ -51,6 +51,21 @@ export function AdminProvider({ children }) {
     setIsAdmin(false);
   };
 
+
+  const loadData = async () => {
+  setLoading(true);
+  try {
+    console.log('🔍 Ma\'lumotlar yuklanmoqda...');
+    const productsData = await getProducts();
+    console.log('✅ Mahsulotlar:', productsData);
+    setProducts(productsData || []);
+  } catch (error) {
+    console.error('❌ Xatolik:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
   // Mahsulot qo'shish
   const addProduct = (product) => {
     const newProduct = {
