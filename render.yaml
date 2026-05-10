@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: mebel
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: REACT_APP_SUPABASE_URL
+        value: https://hxrwrhbbijfntbrntpxk.supabase.co
+      - key: REACT_APP_SUPABASE_ANON_KEY
+        value: sb_publishable_qnJTSPaIOR5tn0dZw2RdgA_w6WOjvsJ
