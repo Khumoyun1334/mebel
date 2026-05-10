@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
@@ -6,10 +5,11 @@ import { WishlistProvider } from './context/WishlistContext';
 import { ToastProvider } from './context/ToastContext';
 import { AdminProvider, useAdmin } from './context/AdminContext';
 import { useAdminShortcut } from './hooks/useAdminShortcut';
+import { supabase } from './services/supabase'; // ← MUHIM! QO'SHILDI
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AdminModal from './components/AdminModal';
-import AdminPanel from './context/AdminPanel';
+import AdminPanel from './context/AdminPanel'; // ← 'context/AdminPanel' emas, 'components/AdminPanel'
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -25,19 +25,23 @@ function AppContent() {
   const { showAdminModal, setShowAdminModal, isAdmin, loading } = useAdmin();
   useAdminShortcut();
 
-
-    useEffect(() => {
+  // Supabase ulanishini tekshirish
+  useEffect(() => {
     const testConnection = async () => {
       try {
-        const { data, error } = await supabase
+        console.log('🔍 Supabase ulanishi tekshirilmoqda...');
+        console.log('URL:', process.env.REACT_APP_SUPABASE_URL);
+        console.log('KEY:', process.env.REACT_APP_SUPABASE_ANON_KEY ? '✅ Bor' : '❌ Yoq');
+        
+        const { data, error, count } = await supabase
           .from('products')
-          .select('count', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true });
         
         if (error) {
-          console.log('❌ Supabase ga ulanishda xatolik:', error.message);
+          console.log('❌ Supabase xatolik:', error.message);
         } else {
           console.log('✅ Supabase ga muvaffaqiyatli ulandi!');
-          console.log('📦 Mahsulotlar soni:', data);
+          console.log('📦 Mahsulotlar soni:', count);
         }
       } catch (err) {
         console.log('❌ Xatolik:', err.message);
