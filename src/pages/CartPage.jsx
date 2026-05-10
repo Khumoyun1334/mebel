@@ -28,10 +28,6 @@ function CartPage() {
   const tax = Math.round(total * 0.08);
   const grandTotal = total + shipping + tax;
 
-  const handleCheckout = () => {
-    setShowCheckout(true);
-  };
-
   const handleCheckoutSuccess = () => {
     clearCart();
     navigate('/products');
@@ -71,7 +67,7 @@ function CartPage() {
                   <span className="font-serif text-lg md:text-xl text-dark font-normal">
                     ${(item.price * item.qty).toLocaleString()}
                   </span>
-                  <button onClick={() => { removeFromCart(item.id); showToast("Buyum o'chirildi", "error"); }} className="text-error text-xs flex items-center gap-1 hover:underline">
+                  <button onClick={() => { removeFromCart(item.id); showToast("Buyum o'chirildi", "error"); }} className="text-red-500 text-xs flex items-center gap-1 hover:underline">
                     <FiTrash2 size={14} /> O'chirish
                   </button>
                 </div>
@@ -108,7 +104,7 @@ function CartPage() {
                 </p>
               )}
               <button 
-                onClick={handleCheckout}
+                onClick={() => setShowCheckout(true)}
                 className="w-full bg-accent text-white border-none py-3 rounded-xl text-sm font-serif font-semibold cursor-pointer mt-5 hover:bg-accent-dark transition-all"
               >
                 Buyurtma Qilish →
@@ -121,11 +117,8 @@ function CartPage() {
         </div>
       </div>
 
-      {/* Checkout Modal */}
       {showCheckout && (
         <CheckoutModal
-          cart={cart}
-          total={grandTotal}
           onClose={() => setShowCheckout(false)}
           onSuccess={handleCheckoutSuccess}
         />

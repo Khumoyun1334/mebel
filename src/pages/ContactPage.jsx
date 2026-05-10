@@ -20,7 +20,7 @@ function ContactPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.message) {
@@ -29,18 +29,18 @@ function ContactPage() {
     }
 
     setIsSubmitting(true);
-    
-    // Xabarni admin panelga yuborish
-    addContactMessage({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone || 'Ko\'rsatilmagan',
-      subject: formData.subject || 'Mavzu yo\'q',
-      message: formData.message
-    });
-    
-    setTimeout(() => {
-      showToast("Xabaringiz muvaffaqiyatli yuborildi! Admin tez orada siz bilan bog'lanadi.", "success");
+    console.log('📧 Xabar yuborilmoqda...');
+
+    try {
+      await addContactMessage({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || 'Ko\'rsatilmagan',
+        subject: formData.subject || 'Mavzu yo\'q',
+        message: formData.message
+      });
+      
+      showToast("Xabaringiz muvaffaqiyatli yuborildi! Admin tez orada bog'lanadi.", "success");
       setFormData({
         name: '',
         email: '',
@@ -48,8 +48,12 @@ function ContactPage() {
         subject: '',
         message: ''
       });
+    } catch (error) {
+      console.error('Xatolik:', error);
+      showToast("Xatolik yuz berdi. Qayta urinib ko'ring.", "error");
+    } finally {
       setIsSubmitting(false);
-    }, 500);
+    }
   };
 
   const contactInfo = [
@@ -81,7 +85,6 @@ function ContactPage() {
 
   return (
     <div className="min-h-screen bg-lightBg">
-      {/* Hero Qismi */}
       <div className="relative bg-dark py-20 mt-5 px-4 md:px-8 text-center overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-accent/20 animate-pulse"></div>
@@ -98,7 +101,6 @@ function ContactPage() {
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <div className="grid lg:grid-cols-3 gap-8 md:gap-12">
-          {/* Contact Info Cards */}
           <div className="lg:col-span-1 space-y-5">
             {contactInfo.map((info, index) => {
               const Icon = info.icon;
@@ -118,26 +120,8 @@ function ContactPage() {
                 </div>
               );
             })}
-
-            {/* Map */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="rounded-xl overflow-hidden h-48 bg-gray-100">
-                <iframe
-                  title="Google Maps"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d95949.0293160259!2d69.24006210292875!3d41.29949583813637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38ae8b0cc379e9c3%3A0xa5a9323b4aa5cb4!2sTashkent%2C%20Uzbekistan!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="rounded-xl"
-                ></iframe>
-              </div>
-            </div>
           </div>
 
-          {/* Contact Form */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm">
               <div className="mb-6 md:mb-8">
@@ -156,9 +140,9 @@ function ContactPage() {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
+                      required
                       placeholder="Ism familiyangiz"
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all bg-gray-50/50 focus:bg-white"
-                      required
                     />
                   </div>
                   <div>
@@ -170,9 +154,9 @@ function ContactPage() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
+                      required
                       placeholder="email@misol.com"
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all bg-gray-50/50 focus:bg-white"
-                      required
                     />
                   </div>
                 </div>
@@ -214,10 +198,10 @@ function ContactPage() {
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
+                    required
                     rows={5}
                     placeholder="Xabaringizni yozing..."
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all bg-gray-50/50 focus:bg-white resize-none"
-                    required
                   />
                 </div>
 
@@ -240,69 +224,6 @@ function ContactPage() {
                 </button>
               </form>
             </div>
-          </div>
-        </div>
-
-        {/* FAQ Section */}
-        <div className="mt-16 md:mt-20">
-          <div className="text-center mb-8 md:mb-12">
-            <p className="text-accent text-sm font-semibold tracking-wider uppercase mb-3">Ko'p so'raladigan savollar</p>
-            <h2 className="text-2xl md:text-3xl font-serif font-normal text-dark">Tez-tez beriladigan savollar</h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              {
-                q: "Yetkazib berish qancha vaqt oladi?",
-                a: "Toshkent shahri bo'ylab yetkazib berish 1-2 kun, viloyatlarga 3-5 kun ichida yetkazib beriladi."
-              },
-              {
-                q: "Mahsulotni qaytarish mumkinmi?",
-                a: "Ha, sotib olingan kundan boshlab 30 kun ichida tovar qaytarilishi yoki almashtirilishi mumkin."
-              },
-              {
-                q: "Kafolat qancha muddatga beriladi?",
-                a: "Barcha mahsulotlarimizga 2 yillik kafolat beriladi."
-              },
-              {
-                q: "To'lov usullari qanday?",
-                a: "Naqd pul, plastik karta, Click, Payme va bank o'tkazmasi orqali to'lov qilishingiz mumkin."
-              },
-              {
-                q: "Mahsulotni yig'ish xizmati bormi?",
-                a: "Ha, mutaxassislarimiz tomonidan mahsulotni yig'ish xizmati mavjud (qo'shimcha to'lov evaziga)."
-              },
-              {
-                q: "Chegirmalar haqida qayerdan bilish mumkin?",
-                a: "Axborotnomalarimizga obuna bo'ling yoki ijtimoiy tarmoqlarimizni kuzatib boring."
-              }
-            ].map((faq, index) => (
-              <div key={index} className="bg-white rounded-xl p-5 md:p-6 shadow-sm hover:shadow-md transition-shadow">
-                <h3 className="font-semibold text-dark text-base md:text-lg mb-2">❓ {faq.q}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{faq.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Social Media */}
-        <div className="mt-16 md:mt-20 text-center">
-          <p className="text-gray-500 text-sm mb-4">Bizni ijtimoiy tarmoqlarda kuzatib boring</p>
-          <div className="flex justify-center gap-4">
-            {[
-              { name: "Instagram", icon: "📸", color: "hover:bg-pink-500" },
-              { name: "Telegram", icon: "💬", color: "hover:bg-blue-500" },
-              { name: "Facebook", icon: "👍", color: "hover:bg-blue-600" },
-              { name: "YouTube", icon: "▶️", color: "hover:bg-red-600" }
-            ].map(social => (
-              <a
-                key={social.name}
-                href="#"
-                className={`w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-xl transition-all ${social.color} hover:text-white hover:scale-110`}
-              >
-                {social.icon}
-              </a>
-            ))}
           </div>
         </div>
       </div>
