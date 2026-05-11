@@ -3,13 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
-import { FiHeart, FiShoppingCart } from 'react-icons/fi';
+import { FiHeart, FiShoppingCart, FiTrash2 } from 'react-icons/fi';
 
 function WishlistPage() {
   const navigate = useNavigate();
   const { wishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
   const { showToast } = useToast();
+
+  console.log('Wishlist mahsulotlar:', wishlist); // Tekshirish uchun
 
   if (wishlist.length === 0) {
     return (
@@ -42,7 +44,10 @@ function WishlistPage() {
                   className="w-full h-full object-cover cursor-pointer transition-transform hover:scale-105 duration-500"
                 />
                 <button
-                  onClick={() => { toggleWishlist(item); showToast("Istaklar ro'yxatidan o'chirildi", "error"); }}
+                  onClick={() => { 
+                    toggleWishlist(item); 
+                    showToast(`${item.name} istaklar ro'yxatidan o'chirildi`, "error"); 
+                  }}
                   className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
                 >
                   <FiHeart size={16} className="fill-red-500 text-red-500" />
@@ -54,7 +59,10 @@ function WishlistPage() {
                 <div className="flex justify-between items-center mt-3">
                   <span className="font-serif text-lg font-bold text-dark">${item.price.toLocaleString()}</span>
                   <button
-                    onClick={() => { addToCart(item); showToast(`${item.name} savatga qo'shildi!`); }}
+                    onClick={() => { 
+                      addToCart(item); 
+                      showToast(`${item.name} savatga qo'shildi!`, "success"); 
+                    }}
                     className="bg-dark text-white border-none px-4 py-2 rounded-full text-xs font-semibold cursor-pointer flex items-center gap-1 hover:bg-accent transition-all"
                   >
                     <FiShoppingCart size={12} /> Savatga

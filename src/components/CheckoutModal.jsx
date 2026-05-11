@@ -61,7 +61,7 @@ function CheckoutModal({ onClose, onSuccess }) {
     }
   };
 
-  // Agar savat bo'sh bo'lsa
+
   if (cart.length === 0) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000]">

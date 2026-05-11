@@ -6,7 +6,7 @@ import {
   FiPackage, FiShoppingCart, FiCheckCircle, FiXCircle, 
   FiDollarSign, FiMail, FiMessageSquare, FiEye, FiTrash2,
   FiClock, FiUser, FiPhone, FiMail as FiMailIcon, FiTag,
-  FiEdit2, FiPlus
+  FiEdit2, FiPlus, FiCalendar, FiPrinter
 } from 'react-icons/fi';
 
 function AdminPanel({ onClose }) {
@@ -29,8 +29,234 @@ function AdminPanel({ onClose }) {
   const [showProductForm, setShowProductForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedOrders, setSelectedOrders] = useState([]); // Tanlangan buyurtmalar
 
-  // contactMessages undefined bo'lsa, default qiymat
+  // ============ PRINT FUNKSIYASI ============
+  const printOrders = () => {
+    // Agar tanlangan buyurtmalar bo'lsa, shularni, bo'lmasa hammasini chop etish
+    const ordersToPrint = selectedOrders.length > 0 
+      ? orders.filter(o => selectedOrders.includes(o.id))
+      : orders;
+    
+    if (ordersToPrint.length === 0) {
+      showToast("Chop etish uchun buyurtma yo'q", "error");
+      return;
+    }
+
+    // Chop etish uchun HTML tayyorlash
+    const printWindow = window.open('', '_blank');
+    
+    const statusNames = {
+      pending: 'Kutilmoqda',
+      processing: 'Jarayonda',
+      completed: 'Bajarildi',
+      cancelled: 'Bekor qilingan'
+    };
+
+    const paymentNames = {
+      cash: 'Naqd pul',
+      card: 'Plastik karta',
+      click: 'Click',
+      payme: 'Payme'
+    };
+
+    let totalSum = 0;
+    let ordersHtml = '';
+
+    ordersToPrint.forEach((order, index) => {
+      const orderTotal = order.total || 0;
+      totalSum += orderTotal;
+      
+      const orderItems = (order.items || []).map(item => `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.name}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.qty}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">$${item.price.toLocaleString()}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">$${(item.price * item.qty).toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      ordersHtml += `
+        <div style="page-break-after: always; margin-bottom: 30px;">
+          <div style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <div style="border-bottom: 2px solid #C89B6D; padding-bottom: 10px; margin-bottom: 15px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="color: #C89B6D; margin: 0;">Buyurtma #${order.id}</h2>
+                <span style="background: ${order.status === 'pending' ? '#fef3c7' : order.status === 'completed' ? '#d1fae5' : '#fee2e2'}; padding: 4px 12px; border-radius: 20px; font-size: 12px;">
+                  ${statusNames[order.status] || order.status}
+                </span>
+              </div>
+            </div>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
+              <div style="flex: 1; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                <h3 style="margin-top: 0; color: #666;">👤 Mijoz ma'lumotlari</h3>
+                <p><strong>Ism:</strong> ${order.customer_name || order.customerName}</p>
+                <p><strong>Telefon:</strong> ${order.customer_phone || order.customerPhone}</p>
+                <p><strong>Manzil:</strong> ${order.customer_address || order.customerAddress}</p>
+              </div>
+              <div style="flex: 1; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                <h3 style="margin-top: 0; color: #666;">📅 Buyurtma vaqti</h3>
+                <p><strong>Sana:</strong> ${new Date(order.created_at || order.createdAt).toLocaleDateString('uz-UZ')}</p>
+                <p><strong>Vaqt:</strong> ${new Date(order.created_at || order.createdAt).toLocaleTimeString('uz-UZ')}</p>
+                <p><strong>To'lov:</strong> ${paymentNames[order.payment_method] || order.payment_method}</p>
+              </div>
+            </div>
+            
+            <div>
+              <h3 style="color: #666;">🛒 Mahsulotlar</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f0f0f0;">
+                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Mahsulot</th>
+                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Soni</th>
+                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Bir narxi</th>
+                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Jami</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${orderItems}
+                </tbody>
+                <tfoot>
+                  <tr style="background: #f9f9f9;">
+                    <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">JAMI:</td>
+                    <td style="padding: 10px; text-align: right; font-weight: bold; color: #C89B6D;">$${orderTotal.toLocaleString()}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    // Chop etish uchun to'liq HTML
+    const printHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Buyurtmalar ro'yxati</title>
+        <meta charset="UTF-8">
+        <style>
+          @media print {
+            body { margin: 0; padding: 20px; }
+            .no-print { display: none; }
+            div { page-break-inside: avoid; }
+          }
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #fff;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #C89B6D;
+          }
+          .header h1 {
+            color: #C89B6D;
+            margin: 0;
+          }
+          .header p {
+            color: #666;
+            margin: 5px 0 0;
+          }
+          .summary {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          .no-print {
+            text-align: center;
+            margin-top: 20px;
+          }
+          button {
+            background: #C89B6D;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Azizbek Mebellari</h1>
+          <p>Buyurtmalar ro'yxati</p>
+          <p>Sana: ${new Date().toLocaleDateString('uz-UZ')} | Vaqt: ${new Date().toLocaleTimeString('uz-UZ')}</p>
+        </div>
+        
+        <div class="summary">
+          <span><strong>📊 Jami buyurtmalar:</strong> ${ordersToPrint.length} ta</span>
+          <span><strong>💰 Umumiy summa:</strong> $${totalSum.toLocaleString()}</span>
+        </div>
+        
+        ${ordersHtml}
+        
+        <div class="no-print" style="text-align: center; margin-top: 30px;">
+          <button onclick="window.print();">🖨️ Chop etish</button>
+          <button onclick="window.close();" style="margin-left: 10px; background: #666;">❌ Yopish</button>
+        </div>
+        
+        <script>
+          // Avtomatik chop etish oynasini ochish
+          setTimeout(() => {
+            window.print();
+          }, 500);
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+    
+    showToast(`${ordersToPrint.length} ta buyurtma chop etishga yuborildi`, "success");
+  };
+
+  // Tanlangan buyurtmalarni o'zgartirish
+  const toggleOrderSelection = (orderId) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  // Hammasini tanlash / bekor qilish
+  const toggleSelectAll = () => {
+    if (selectedOrders.length === orders.length) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders(orders.map(o => o.id));
+    }
+  };
+
+  // ============ VAQT FORMATLASH ============
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'Noma\'lum';
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString('uz-UZ', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      time: date.toLocaleTimeString('uz-UZ', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      full: date.toLocaleString('uz-UZ')
+    };
+  };
+
   const messages = contactMessages || [];
   const stats = getStats ? getStats() : { 
     totalOrders: 0, pendingOrders: 0, completedOrders: 0, 
@@ -124,7 +350,7 @@ function AdminPanel({ onClose }) {
               <h2 className="text-xl md:text-2xl font-serif text-dark">Admin Panel</h2>
               <p className="text-xs md:text-sm text-gray-500 mt-1">Mahsulotlar, buyurtmalar va xabarlarni boshqaring</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={handleAddProduct}
                 className="bg-success text-white px-4 md:px-5 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-semibold hover:bg-green-700 transition-all flex items-center gap-1"
@@ -186,9 +412,41 @@ function AdminPanel({ onClose }) {
           </div>
         </div>
 
-        {/* Orders Tab */}
+        {/* Orders Tab - Print tugmalari qo'shilgan */}
         {activeTab === 'orders' && (
           <div className="p-4 md:p-6">
+            {/* Chop etish tugmalari */}
+            <div className="flex flex-wrap gap-3 mb-6 justify-between items-center">
+              <div className="flex gap-2">
+                <button
+                  onClick={printOrders}
+                  className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-accent-dark transition-all flex items-center gap-2"
+                >
+                  <FiPrinter size={16} /> Chop etish ({selectedOrders.length > 0 ? selectedOrders.length : orders?.length || 0} ta)
+                </button>
+                {selectedOrders.length > 0 && (
+                  <button
+                    onClick={() => setSelectedOrders([])}
+                    className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-all"
+                  >
+                    Tanlovni bekor qilish
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={selectedOrders.length === orders?.length && orders?.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent"
+                  />
+                  Hammasini tanlash
+                </label>
+                <p className="text-sm text-gray-500">Jami: {orders?.length || 0} ta buyurtma</p>
+              </div>
+            </div>
+            
             {!orders || orders.length === 0 ? (
               <div className="text-center py-10 text-gray-500">
                 <FiPackage size={48} className="mx-auto mb-3 text-gray-300" />
@@ -196,67 +454,80 @@ function AdminPanel({ onClose }) {
               </div>
             ) : (
               <div className="space-y-4">
-                {orders.map(order => (
-                  <div key={order.id} className="border border-gray-100 rounded-xl p-4 md:p-5 hover:shadow-md transition-shadow">
-                    <div className="flex flex-wrap justify-between items-start gap-3 mb-3">
-                      <div>
-                        <span className="text-xs text-gray-400">#{order.id}</span>
-                        <p className="font-semibold text-dark flex items-center gap-1">
-                          <FiUser size={12} /> {order.customerName}
-                        </p>
-                        <p className="text-xs text-gray-400 flex items-center gap-1">
-                          <FiPhone size={10} /> {order.customerPhone}
-                        </p>
-                        <p className="text-xs text-gray-400">{order.customerAddress}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-accent">${order.total.toLocaleString()}</p>
-                        <p className="text-xs text-gray-400 flex items-center gap-1">
-                          <FiClock size={10} /> {new Date(order.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="border-t border-gray-100 pt-3 mt-2">
-                      <p className="text-xs text-gray-500 mb-2">Mahsulotlar:</p>
-                      <div className="space-y-1">
-                        {order.items?.map((item, idx) => (
-                          <div key={idx} className="text-sm flex justify-between">
-                            <span>{item.name} x{item.qty}</span>
-                            <span className="text-dark">${(item.price * item.qty).toLocaleString()}</span>
+                {orders.map(order => {
+                  const dateTime = formatDateTime(order.created_at || order.createdAt);
+                  const isSelected = selectedOrders.includes(order.id);
+                  return (
+                    <div key={order.id} className={`border rounded-xl p-4 md:p-5 hover:shadow-md transition-shadow ${isSelected ? 'border-accent bg-accent/5' : 'border-gray-100'}`}>
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleOrderSelection(order.id)}
+                          className="mt-1 w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent"
+                        />
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="text-xs text-gray-400">#{order.id}</span>
+                            <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <FiCalendar size={10} /> {dateTime.date}
+                            </span>
+                            <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <FiClock size={10} /> {dateTime.time}
+                            </span>
                           </div>
-                        ))}
+                          <p className="font-semibold text-dark flex items-center gap-1">
+                            <FiUser size={12} /> {order.customer_name || order.customerName}
+                          </p>
+                          <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                            <FiPhone size={10} /> {order.customer_phone || order.customerPhone}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">{order.customer_address || order.customerAddress}</p>
+                          
+                          <div className="border-t border-gray-100 pt-3 mt-3">
+                            <p className="text-xs text-gray-500 mb-2">Mahsulotlar:</p>
+                            <div className="space-y-1">
+                              {(order.items || []).map((item, idx) => (
+                                <div key={idx} className="text-sm flex justify-between">
+                                  <span>{item.name} x{item.qty}</span>
+                                  <span className="text-dark">${(item.price * item.qty).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-wrap justify-between items-center gap-3 mt-4 pt-3 border-t border-gray-100">
+                            <div className="flex gap-2">
+                              <select
+                                value={order.status}
+                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[order.status]} border-none outline-none cursor-pointer`}
+                              >
+                                <option value="pending">Kutilmoqda</option>
+                                <option value="processing">Jarayonda</option>
+                                <option value="completed">Bajarildi</option>
+                                <option value="cancelled">Bekor qilingan</option>
+                              </select>
+                              <span className="text-sm font-semibold text-accent">${(order.total || 0).toLocaleString()}</span>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="text-red-500 text-xs hover:underline flex items-center gap-1"
+                            >
+                              <FiTrash2 size={12} /> O'chirish
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="flex flex-wrap justify-between items-center gap-3 mt-4 pt-3 border-t border-gray-100">
-                      <div className="flex gap-2">
-                        <select
-                          value={order.status}
-                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[order.status]} border-none outline-none cursor-pointer`}
-                        >
-                          <option value="pending">Kutilmoqda</option>
-                          <option value="processing">Jarayonda</option>
-                          <option value="completed">Bajarildi</option>
-                          <option value="cancelled">Bekor qilingan</option>
-                        </select>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteOrder(order.id)}
-                        className="text-red-500 text-xs hover:underline flex items-center gap-1"
-                      >
-                        <FiTrash2 size={12} /> O'chirish
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
 
-        {/* Products Tab */}
+        {/* Products Tab (o'zgarishsiz) */}
         {activeTab === 'products' && (
           <div className="p-4 md:p-6">
             <div className="flex flex-wrap gap-3 mb-6 justify-between items-center">
@@ -334,7 +605,7 @@ function AdminPanel({ onClose }) {
           </div>
         )}
 
-        {/* Messages Tab */}
+        {/* Messages Tab (o'zgarishsiz) */}
         {activeTab === 'messages' && (
           <div className="p-4 md:p-6">
             <div className="mb-4 flex justify-between items-center">
@@ -351,71 +622,79 @@ function AdminPanel({ onClose }) {
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map(msg => (
-                  <div 
-                    key={msg.id} 
-                    className={`border rounded-xl p-5 transition-all ${
-                      msg.status === 'unread' ? 'border-accent bg-accent/5 shadow-sm' : 'border-gray-100 bg-white'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-dark">{msg.name}</h3>
-                          {msg.status === 'unread' && (
-                            <span className="bg-accent text-white text-xs px-2 py-0.5 rounded-full">Yangi</span>
-                          )}
+                {messages.map(msg => {
+                  const dateTime = formatDateTime(msg.created_at || msg.createdAt);
+                  return (
+                    <div 
+                      key={msg.id} 
+                      className={`border rounded-xl p-5 transition-all ${
+                        msg.status === 'unread' ? 'border-accent bg-accent/5 shadow-sm' : 'border-gray-100 bg-white'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-dark">{msg.name}</h3>
+                            {msg.status === 'unread' && (
+                              <span className="bg-accent text-white text-xs px-2 py-0.5 rounded-full">Yangi</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            <p className="text-xs text-gray-400 flex items-center gap-1">
+                              <FiMailIcon size={10} /> {msg.email}
+                            </p>
+                            <p className="text-xs text-gray-400 flex items-center gap-1">
+                              <FiPhone size={10} /> {msg.phone}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 mt-1 flex-wrap">
-                          <p className="text-xs text-gray-400 flex items-center gap-1">
-                            <FiMailIcon size={10} /> {msg.email}
-                          </p>
-                          <p className="text-xs text-gray-400 flex items-center gap-1">
-                            <FiPhone size={10} /> {msg.phone}
-                          </p>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-400 flex flex-col items-end gap-0.5">
+                            <span className="flex items-center gap-1">
+                              <FiCalendar size={10} /> {dateTime.date}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <FiClock size={10} /> {dateTime.time}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-400 flex items-center gap-1">
-                          <FiClock size={10} /> {new Date(msg.createdAt).toLocaleString()}
+                      
+                      <div className="mb-3">
+                        <p className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                          <FiTag size={12} /> Mavzu: {msg.subject}
                         </p>
                       </div>
-                    </div>
-                    
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-600 flex items-center gap-1">
-                        <FiTag size={12} /> Mavzu: {msg.subject}
-                      </p>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                      <p className="text-gray-600 text-sm leading-relaxed">{msg.message}</p>
-                    </div>
-                    
-                    <div className="flex gap-3">
-                      {msg.status === 'unread' && (
+                      
+                      <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                        <p className="text-gray-600 text-sm leading-relaxed">{msg.message}</p>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        {msg.status === 'unread' && (
+                          <button
+                            onClick={() => handleMarkAsRead(msg.id)}
+                            className="text-accent text-sm hover:underline flex items-center gap-1"
+                          >
+                            <FiEye size={12} /> O'qilgan deb belgilash
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleMarkAsRead(msg.id)}
-                          className="text-accent text-sm hover:underline flex items-center gap-1"
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="text-red-500 text-sm hover:underline flex items-center gap-1"
                         >
-                          <FiEye size={12} /> O'qilgan deb belgilash
+                          <FiTrash2 size={12} /> O'chirish
                         </button>
-                      )}
-                      <button
-                        onClick={() => handleDeleteMessage(msg.id)}
-                        className="text-red-500 text-sm hover:underline flex items-center gap-1"
-                      >
-                        <FiTrash2 size={12} /> O'chirish
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
 
-        {/* Stats Tab */}
+        {/* Stats Tab (o'zgarishsiz) */}
         {activeTab === 'stats' && (
           <div className="p-4 md:p-6">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
@@ -465,20 +744,25 @@ function AdminPanel({ onClose }) {
             <div className="bg-gray-50 rounded-xl p-4 md:p-5 mb-6">
               <h3 className="font-semibold text-dark mb-3">So'nggi Buyurtmalar</h3>
               <div className="space-y-2">
-                {(orders || []).slice(0, 5).map(order => (
-                  <div key={order.id} className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <div>
-                      <p className="text-sm font-medium text-dark">{order.customerName}</p>
-                      <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
+                {(orders || []).slice(0, 5).map(order => {
+                  const dateTime = formatDateTime(order.created_at || order.createdAt);
+                  return (
+                    <div key={order.id} className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <div>
+                        <p className="text-sm font-medium text-dark">{order.customer_name || order.customerName}</p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <FiCalendar size={10} /> {dateTime.date}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-accent">${(order.total || 0).toLocaleString()}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[order.status]}`}>
+                          {statusNames[order.status]}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-accent">${order.total.toLocaleString()}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[order.status]}`}>
-                        {statusNames[order.status]}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {(orders || []).length === 0 && (
                   <p className="text-center text-gray-400 py-4">Hali buyurtmalar yo'q</p>
                 )}
@@ -488,20 +772,25 @@ function AdminPanel({ onClose }) {
             <div className="bg-gray-50 rounded-xl p-4 md:p-5">
               <h3 className="font-semibold text-dark mb-3">So'nggi Xabarlar</h3>
               <div className="space-y-2">
-                {messages.slice(0, 5).map(msg => (
-                  <div key={msg.id} className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <div>
-                      <p className="text-sm font-medium text-dark">{msg.name}</p>
-                      <p className="text-xs text-gray-400">{msg.subject}</p>
+                {messages.slice(0, 5).map(msg => {
+                  const dateTime = formatDateTime(msg.created_at || msg.createdAt);
+                  return (
+                    <div key={msg.id} className="flex justify-between items-center py-2 border-b border-gray-200">
+                      <div>
+                        <p className="text-sm font-medium text-dark">{msg.name}</p>
+                        <p className="text-xs text-gray-400">{msg.subject}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400 flex items-center gap-1">
+                          <FiCalendar size={10} /> {dateTime.date}
+                        </p>
+                        {msg.status === 'unread' && (
+                          <span className="text-xs text-accent font-semibold">Yangi</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">{new Date(msg.createdAt).toLocaleDateString()}</p>
-                      {msg.status === 'unread' && (
-                        <span className="text-xs text-accent font-semibold">Yangi</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {messages.length === 0 && (
                   <p className="text-center text-gray-400 py-4">Hali xabarlar yo'q</p>
                 )}

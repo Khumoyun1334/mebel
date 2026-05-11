@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { sendTelegramMessage, formatOrderMessage, formatContactMessage } from '../services/telegramService';
 
 const AdminContext = createContext();
 
@@ -6,7 +7,7 @@ export function AdminProvider({ children }) {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [contactMessages, setContactMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // loading o'chirildi !!!!!!!!!!!!!!!!!
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('luxehome_admin') === 'true';
   });
@@ -15,11 +16,10 @@ export function AdminProvider({ children }) {
   const supabaseUrl = 'https://hxrwrhbbijfntbrntpxk.supabase.co';
   const supabaseKey = 'sb_publishable_qnJTSPaIOR5tn0dZw2RdgA_w6WOjvsJ';
 
-  // Mahsulotlarni yuklash
+  // Ma'lumotlarni yuklash - loading'siz
   const loadData = async () => {
-    setLoading(true);
     try {
-      console.log('🔍 Yuklash boshlandi...');
+      console.log('🔍 Ma\'lumotlar yuklanmoqda...');
       
       // Mahsulotlar
       const productsResponse = await fetch(`${supabaseUrl}/rest/v1/products?apikey=${supabaseKey}`, {
@@ -46,12 +46,10 @@ export function AdminProvider({ children }) {
       setContactMessages(messagesData || []);
       
     } catch (error) {
-      console.error('❌ Xatolik:', error);
+      console.error('❌ Ma\'lumotlarni yuklashda xatolik:', error);
       setProducts([]);
       setOrders([]);
       setContactMessages([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -74,6 +72,8 @@ export function AdminProvider({ children }) {
     localStorage.setItem('luxehome_admin', 'false');
   };
 
+  // ============ MAHSULOTLAR ============
+  
   // Mahsulot qo'shish
   const addProduct = async (product) => {
     try {
@@ -162,9 +162,12 @@ export function AdminProvider({ children }) {
     }
   };
 
+  // ============ BUYURTMALAR ============
+  
   // Buyurtma qo'shish
   const addOrder = async (orderData) => {
     try {
+      const now = new Date();
       const newOrder = {
         id: Date.now(),
         customer_name: orderData.customerName,
@@ -174,7 +177,7 @@ export function AdminProvider({ children }) {
         items: orderData.items,
         total: orderData.total,
         status: 'pending',
-        created_at: new Date().toISOString()
+        created_at: now.toISOString()
       };
       
       const response = await fetch(`${supabaseUrl}/rest/v1/orders?apikey=${supabaseKey}`, {
@@ -189,6 +192,21 @@ export function AdminProvider({ children }) {
       if (!response.ok) throw new Error('Buyurtma qo\'shishda xatolik');
       
       await loadData();
+      
+      // Telegramga xabar yuborish
+      const message = formatOrderMessage({
+        id: newOrder.id,
+        customerName: newOrder.customer_name,
+        customerPhone: newOrder.customer_phone,
+        customerAddress: newOrder.customer_address,
+        paymentMethod: newOrder.payment_method,
+        items: newOrder.items,
+        total: newOrder.total,
+        status: newOrder.status,
+        created_at: newOrder.created_at
+      });
+      await sendTelegramMessage(message);
+      
       return newOrder;
     } catch (error) {
       console.error('❌ addOrder xatosi:', error);
@@ -196,6 +214,67 @@ export function AdminProvider({ children }) {
     }
   };
 
+  // Buyurtma holatini yangilash
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}&apikey=${supabaseKey}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+      });
+      
+      if (!response.ok) throw new Error('Holatni yangilashda xatolik');
+      
+      await loadData();
+      
+      // Holat o'zgarishi haqida Telegramga xabar yuborish
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        const statusMessage = `
+🔄 <b>BUYURTMA HOLATI O'ZGARDI</b> 🔄
+
+<b>📋 Buyurtma #${orderId}</b>
+<b>👤 Mijoz:</b> ${order.customer_name}
+<b>📊 Yangi holat:</b> ${getStatusName(newStatus)}
+
+🔗 <a href="${window.location.origin}/admin">Admin panelga o'tish</a>
+        `;
+        await sendTelegramMessage(statusMessage);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ updateOrderStatus xatosi:', error);
+      throw error;
+    }
+  };
+
+  // Buyurtmani o'chirish
+  const deleteOrder = async (orderId) => {
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}&apikey=${supabaseKey}`, {
+        method: 'DELETE',
+        headers: { 'apikey': supabaseKey }
+      });
+      
+      if (!response.ok) throw new Error('O\'chirishda xatolik');
+      
+      await loadData();
+      return true;
+    } catch (error) {
+      console.error('❌ deleteOrder xatosi:', error);
+      throw error;
+    }
+  };
+
+  // ============ XABARLAR ============
+  
   // Xabar qo'shish
   const addContactMessage = async (messageData) => {
     try {
@@ -222,6 +301,11 @@ export function AdminProvider({ children }) {
       if (!response.ok) throw new Error('Xabar yuborishda xatolik');
       
       await loadData();
+      
+      // Telegramga xabar yuborish
+      const message = formatContactMessage(newMessage);
+      await sendTelegramMessage(message);
+      
       return newMessage;
     } catch (error) {
       console.error('❌ addContactMessage xatosi:', error);
@@ -229,10 +313,55 @@ export function AdminProvider({ children }) {
     }
   };
 
-  // Statistikalar
+  // Xabar statusini yangilash (o'qilgan/read)
+  const updateMessageStatus = async (messageId, status) => {
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/messages?id=eq.${messageId}&apikey=${supabaseKey}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          status: status,
+          read_at: status === 'read' ? new Date().toISOString() : null
+        })
+      });
+      
+      if (!response.ok) throw new Error('Xabar statusini yangilashda xatolik');
+      
+      await loadData();
+      return true;
+    } catch (error) {
+      console.error('❌ updateMessageStatus xatosi:', error);
+      throw error;
+    }
+  };
+
+  // Xabarni o'chirish
+  const deleteMessage = async (messageId) => {
+    try {
+      const response = await fetch(`${supabaseUrl}/rest/v1/messages?id=eq.${messageId}&apikey=${supabaseKey}`, {
+        method: 'DELETE',
+        headers: { 'apikey': supabaseKey }
+      });
+      
+      if (!response.ok) throw new Error('Xabarni o\'chirishda xatolik');
+      
+      await loadData();
+      return true;
+    } catch (error) {
+      console.error('❌ deleteMessage xatosi:', error);
+      throw error;
+    }
+  };
+
+  // ============ STATISTIKA ============
+  
   const getStats = () => {
     const totalOrders = orders.length;
     const pendingOrders = orders.filter(o => o.status === 'pending').length;
+    const processingOrders = orders.filter(o => o.status === 'processing').length;
     const completedOrders = orders.filter(o => o.status === 'completed').length;
     const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
     const totalRevenue = orders
@@ -243,6 +372,7 @@ export function AdminProvider({ children }) {
     return {
       totalOrders,
       pendingOrders,
+      processingOrders,
       completedOrders,
       cancelledOrders,
       totalRevenue,
@@ -250,12 +380,23 @@ export function AdminProvider({ children }) {
     };
   };
 
+  // Yordamchi funksiya
+  const getStatusName = (status) => {
+    const names = {
+      pending: 'Kutilmoqda',
+      processing: 'Jarayonda',
+      completed: 'Bajarildi',
+      cancelled: 'Bekor qilingan'
+    };
+    return names[status] || status;
+  };
+
   return (
     <AdminContext.Provider value={{
       products,
       orders,
       contactMessages,
-      loading,
+      // loading o'chirildi !!!!!!!!!!!!!!!!!
       isAdmin,
       showAdminModal,
       setShowAdminModal,
@@ -265,7 +406,11 @@ export function AdminProvider({ children }) {
       updateProduct,
       deleteProduct,
       addOrder,
+      updateOrderStatus,
+      deleteOrder,
       addContactMessage,
+      updateMessageStatus,
+      deleteMessage,
       getStats,
       refreshData: loadData
     }}>
