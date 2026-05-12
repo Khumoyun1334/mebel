@@ -218,8 +218,7 @@ function ProductsPage() {
           </div>
         )}
       </div>
-      
-      <Footer />
+    
     </div>
   );
 }
