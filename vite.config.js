@@ -15,4 +15,6 @@ export default defineConfig({
       overlay: false,
     },
   },
+  // SPA routing uchun muhim!
+  base: '/',
 })
