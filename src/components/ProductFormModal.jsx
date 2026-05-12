@@ -161,7 +161,6 @@ function ProductFormModal({ product, onClose }) {
             />
           </div>
 
-          {/* Kategoriya va Narx */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">
@@ -195,7 +194,7 @@ function ProductFormModal({ product, onClose }) {
             </div>
           </div>
 
-          {/* Eski Narx va Badge */}
+        
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">
@@ -227,13 +226,11 @@ function ProductFormModal({ product, onClose }) {
             </div>
           </div>
 
-          {/* Rasmlar Galereyasi */}
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-2">
               Mahsulot Rasmlari <span className="text-red-500">*</span>
             </label>
-            
-            {/* Drag & Drop zonasi */}
+  
             <div
               onDrop={handleDrop}
               onDragOver={handleDragOver}
@@ -256,7 +253,6 @@ function ProductFormModal({ product, onClose }) {
               <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF formatlari (10 tagacha)</p>
             </div>
 
-            {/* Yuklangan rasmlar galereyasi */}
             {formData.images.length > 0 && (
               <div>
                 <p className="text-sm text-gray-600 mb-2">Yuklangan rasmlar ({formData.images.length})</p>
@@ -293,7 +289,6 @@ function ProductFormModal({ product, onClose }) {
             )}
           </div>
 
-          {/* Ranglar */}
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-2">
               Mavjud Ranglar
@@ -343,7 +338,6 @@ function ProductFormModal({ product, onClose }) {
             </div>
           </div>
 
-          {/* Tavsif */}
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-2">
               Tavsif <span className="text-red-500">*</span>
@@ -359,7 +353,7 @@ function ProductFormModal({ product, onClose }) {
             />
           </div>
 
-          {/* Reyting (faqat tahrirlashda) */}
+  
           {isEditing && (
             <div className="grid grid-cols-2 gap-4">
               <div>
