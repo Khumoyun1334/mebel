@@ -61,10 +61,10 @@ function Navbar() {
           {/* Logo */}
           <Link to="/" className="cursor-pointer flex items-center gap-1 sm:gap-2 shrink-0">
             <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 bg-accent rounded-lg flex items-center justify-center">
-              <span className="text-white text-sm sm:text-base md:text-lg font-serif font-bold">L</span>
+              <span className="text-white text-sm sm:text-base md:text-lg font-serif font-bold">AZ</span>
             </div>
             <span className={`font-serif text-base sm:text-lg md:text-[22px] font-normal tracking-tight ${darkMode ? "text-white" : "text-dark"}`}>
-              Luxe<span className="text-accent">Home</span>
+              Azizbek<span className="text-accent">Mebellari</span>
             </span>
           </Link>
 
@@ -131,17 +131,13 @@ function Navbar() {
             </Link>
           </div>
 
-          {/* Tablet Actions - 768px dan 1024px gacha */}
+
           <div className="flex lg:hidden items-center gap-1 sm:gap-2">
-            {/* Tablet Search Button */}
+
             <button onClick={() => setSearchOpen(!searchOpen)} className={`bg-transparent border-none cursor-pointer p-1.5 sm:p-2 flex items-center ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
               <FiSearch size={18} />
             </button>
 
-            {/* Tablet Dark Mode */}
-    
-
-            {/* Tablet Wishlist */}
             <Link to="/wishlist" className="relative">
               <button className={`bg-transparent border-none cursor-pointer p-1.5 sm:p-2 flex items-center ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
                 <FiHeart size={18} />
@@ -153,7 +149,7 @@ function Navbar() {
               </button>
             </Link>
 
-            {/* Tablet Cart */}
+  
             <Link to="/cart" className="relative">
               <button className={`bg-transparent border-none cursor-pointer p-1.5 sm:p-2 flex items-center ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
                 <FiShoppingCart size={18} />
@@ -165,14 +161,11 @@ function Navbar() {
               </button>
             </Link>
 
-            {/* Tablet Menu Button */}
             <button onClick={() => setMobileOpen(!mobileOpen)} className={`bg-transparent border-none cursor-pointer p-1.5 sm:p-2 flex items-center ${darkMode ? "text-gray-300" : "text-gray-500"}`}>
               {mobileOpen ? <FiX size={22} /> : <FiMenu size={22} />}
             </button>
           </div>
         </div>
-
-        {/* Mobile Search Bar - mobil va tablet uchun */}
         {searchOpen && (
           <div className="lg:hidden border-t border-accent/15 py-3 px-3 sm:px-4 bg-lightBg/98">
             <form onSubmit={handleSearch} className="flex items-center gap-2">
@@ -191,7 +184,6 @@ function Navbar() {
         )}
       </nav>
 
-      {/* Mobile Menu - tablet va mobil uchun */}
       {mobileOpen && (
         <div className={`fixed top-[72px] left-0 right-0 z-[999] flex flex-col ${darkMode ? "bg-dark" : "bg-white"} shadow-xl animate-slideDown max-h-[calc(100vh-72px)] overflow-y-auto`}>
           {navLinks.map(link => (
@@ -206,8 +198,7 @@ function Navbar() {
               {link.label}
             </Link>
           ))}
-          
-          {/* Mobile Wishlist */}
+
           <Link
             to="/wishlist"
             onClick={() => setMobileOpen(false)}
@@ -221,8 +212,6 @@ function Navbar() {
               </span>
             )}
           </Link>
-
-          {/* Mobile Dark Mode Toggle */}
           <button
             onClick={() => { setDarkMode(!darkMode); setMobileOpen(false); }}
             className={`flex items-center gap-3 py-3 sm:py-4 px-4 sm:px-6 text-base font-medium border-b ${darkMode ? "border-gray-800 text-gray-300" : "border-gray-100 text-dark"} transition-colors`}

@@ -8,27 +8,24 @@ import { CATEGORIES, REVIEWS } from '../data/data';
 import { useAdmin } from '../context/AdminContext';
 
 function HomePage() {
-  const { products = [], loading } = useAdmin();
-  
-  // products undefined bo'lsa, default [] ishlatiladi
+  const { products } = useAdmin();
   const safeProducts = products || [];
   
+  // Har bir kategoriyadagi mahsulotlar sonini hisoblash
+  const getCategoryCount = (categoryName) => {
+    return safeProducts.filter(p => p?.category === categoryName).length;
+  };
+
+  // Kategoriyalarni yangilangan sonlar bilan
+  const categoriesWithCount = CATEGORIES.map(cat => ({
+    ...cat,
+    count: getCategoryCount(cat.name)
+  }));
+
   const featured = safeProducts.slice(0, 4);
   const bestSellers = safeProducts.filter(p => p?.badge === "Eng Ko'p Sotilgan" || p?.rating >= 4.8);
   const kitchenProducts = safeProducts.filter(p => p?.category === "Oshxona Mebellari").slice(0, 4);
   const officeProducts = safeProducts.filter(p => p?.category === "Ofis Mebellari").slice(0, 4);
-
-  // Yuklanayotgan holat
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-lightBg flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">Mahsulotlar yuklanmoqda...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -39,10 +36,10 @@ function HomePage() {
         <div className="max-w-7xl mx-auto">
           <SectionTitle label="Kategoriyalar" title="Bizning Kolleksiyalar" sub="Uyingizdagi har bir xona uchun maxsus tanlangan mebellar" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
-            {CATEGORIES.map(cat => (
+            {categoriesWithCount.map(cat => (
               <Link 
                 key={cat.name} 
-                to="/products"
+                to={`/products?category=${encodeURIComponent(cat.name)}`}
                 className="rounded-2xl overflow-hidden cursor-pointer relative h-56 md:h-64 transition-transform hover:scale-[1.02] group block"
               >
                 <img src={cat.img} alt={cat.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -50,7 +47,7 @@ function HomePage() {
                 <div className="absolute bottom-4 md:bottom-5 left-4 md:left-5">
                   <div className="text-xl md:text-2xl mb-1">{cat.icon}</div>
                   <h3 className="text-white text-sm md:text-base font-serif font-normal mb-0.5">{cat.name}</h3>
-                  <p className="text-white/70 text-[10px] md:text-[11px]">{cat.count} buyum</p>
+                  <p className="text-white/70 text-[10px] md:text-[11px]">{cat.count} ta mahsulot</p>
                 </div>
               </Link>
             ))}
@@ -58,7 +55,7 @@ function HomePage() {
         </div>
       </div>
 
-      {/* Tanlangan Mahsulotlar - faqat mahsulotlar bo'lsa ko'rsat */}
+      {/* Tanlangan Mahsulotlar */}
       {safeProducts.length > 0 && (
         <div className="bg-lightBg py-12 md:py-20 px-4 md:px-8">
           <div className="max-w-7xl mx-auto">
@@ -163,7 +160,20 @@ function HomePage() {
       </div>
 
       {/* Axborotnoma */}
- 
+      <div className="bg-accent py-12 md:py-20 px-4 md:px-8 text-center">
+        <p className="text-[11px] font-bold tracking-[0.12em] uppercase text-white/80 mb-3 md:mb-4">Yangiliklardan Xabardor Bo'ling</p>
+        <h2 className="text-xl md:text-[clamp(24px,3vw,40px)] font-serif font-normal text-white mb-3 md:mb-4">Axborotnomaning Obuna Bo'ling</h2>
+        <p className="text-white/80 text-sm md:text-base mb-6 md:mb-9">Dizayn ilhomi, yangi mahsulotlar va eksklyuziv takliflarni pochtangizda oling.</p>
+        <div className="flex gap-3 justify-center flex-wrap">
+          <input 
+            placeholder="Email manzilingiz" 
+            className="border-none rounded-full py-3 md:py-3.5 px-5 md:px-7 text-sm md:text-[15px] w-[250px] md:w-[300px] outline-none font-sans" 
+          />
+          <button className="bg-dark text-white border-none rounded-full px-6 md:px-8 py-3 md:py-3.5 text-xs md:text-sm font-bold cursor-pointer tracking-[0.06em]">
+            Obuna Bo'lish
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
