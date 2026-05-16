@@ -14,8 +14,7 @@ function ProductCard({ product }) {
   const [hovered, setHovered] = useState(false);
   const [imgError, setImgError] = useState(false);
   const isWishlisted = hasInWishlist(product.id);
-  
-  // Rasm URL yoki base64 bo'lishi mumkin
+
   const productImage = product.img || (product.images && product.images[0]);
 
   return (
