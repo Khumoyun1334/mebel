@@ -11,7 +11,6 @@ function HeroSection() {
 
   return (
     <div className="relative min-h-screen bg-lightBg overflow-hidden pt-20">
-      {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-20 left-10 w-72 h-72 bg-accent rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent rounded-full blur-3xl" />
@@ -19,27 +18,26 @@ function HeroSection() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-12 md:py-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
+ 
           <div className={`transform transition-all duration-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-            {/* Badge */}
+
             <div className="inline-flex items-center gap-2 bg-accent/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
               <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-              <span className="text-accent text-xs font-semibold tracking-wide">PREMIUM 2025</span>
+              <span className="text-accent text-xs font-semibold tracking-wide">PREMIUM 2026</span>
             </div>
 
-            {/* Heading */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-dark leading-[1.2] mb-6">
               Zamonaviy Mebel
               <span className="block text-accent mt-2">Orzuingizdagi Uy</span>
             </h1>
 
-            {/* Description */}
+
             <p className="text-gray-500 text-base md:text-lg leading-relaxed max-w-lg mb-8">
               Zamonaviy uy uchun yaratilgan abadiy buyumlarni kashf eting. 
               Hashamatli materiallar, hunarmand sifati, eshikingizgacha yetkazib beriladi.
             </p>
 
-            {/* Buttons */}
+   
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <Link
                 to="/products"
@@ -56,7 +54,7 @@ function HeroSection() {
               </Link>
             </div>
 
-            {/* Stats */}
+    
             <div className="flex flex-wrap gap-8">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
@@ -88,7 +86,7 @@ function HeroSection() {
             </div>
           </div>
 
-          {/* Right Image */}
+    
           <div className={`relative transform transition-all duration-700 delay-200 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-tr from-accent/20 to-transparent z-10" />
@@ -99,7 +97,7 @@ function HeroSection() {
               />
             </div>
             
-            {/* Floating Card */}
+
             <div className="absolute -bottom-6 -left-6 bg-white rounded-xl p-4 shadow-lg z-20 animate-bounce-slow">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
