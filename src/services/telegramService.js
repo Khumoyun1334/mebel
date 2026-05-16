@@ -1,10 +1,7 @@
-// src/services/telegramService.js
 
-// ============ TELEGRAM SOZLAMALARI ============
 const TELEGRAM_BOT_TOKEN = '8631017902:AAHziTfx6wpV1K-zmDcue3F9inqjaeGfA3U';
-const TELEGRAM_CHAT_ID = '-5241056102';
+const TELEGRAM_CHAT_ID = '-1003942338438';
 
-// Token va Chat ID ni tekshirish
 const isTelegramConfigured = () => {
   if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
     console.warn('⚠️ Telegram bot token sozlanmagan');
@@ -17,7 +14,6 @@ const isTelegramConfigured = () => {
   return true;
 };
 
-// ============ ASOSIY FUNKSIYA ============
 export const sendTelegramMessage = async (message) => {
   if (!isTelegramConfigured()) {
     return false;
@@ -53,7 +49,6 @@ export const sendTelegramMessage = async (message) => {
   }
 };
 
-// ============ BUYURTMA XABARINI FORMATLASH ============
 export const formatOrderMessage = (order) => {
   // Xavfsizlik tekshiruvi
   if (!order) {
@@ -82,7 +77,6 @@ export const formatOrderMessage = (order) => {
     payme: 'Payme'
   };
   
-  // Mahsulotlar ro'yxatini formatlash
   let itemsList = '';
   if (order.items && order.items.length > 0) {
     itemsList = order.items.map(item => 
@@ -102,7 +96,7 @@ export const formatOrderMessage = (order) => {
   const createdAt = order.created_at || order.createdAt || new Date().toISOString();
 
   return `
-🛍 <b>YANGI BUYURTMA!</b> 🛍
+✅ <b>YANGI BUYURTMA!</b> 
 
 <b>📋 Buyurtma #${orderId}</b>
 <b>📅 Vaqt:</b> ${new Date(createdAt).toLocaleString()}
@@ -118,12 +112,9 @@ export const formatOrderMessage = (order) => {
 ${itemsList}
 
 <b>💰 Jami: $${total.toLocaleString()}</b>
-
-🔗 <a href="${window.location.origin}/admin">Admin panelga o'tish</a>
   `;
 };
 
-// ============ XABAR FORMATLASH ============
 export const formatContactMessage = (message) => {
   // Xavfsizlik tekshiruvi
   if (!message) {
@@ -150,12 +141,9 @@ export const formatContactMessage = (message) => {
 
 <b>💬 Xabar matni:</b>
 ${messageText}
-
-🔗 <a href="${window.location.origin}/admin">Admin panelga o'tish</a>
   `;
 };
 
-// ============ TEST FUNKSIYASI ============
 export const testTelegram = async () => {
   console.log('🔍 Telegram test...');
   const result = await sendTelegramMessage('✅ Bot ishlayapti!');
