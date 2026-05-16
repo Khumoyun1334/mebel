@@ -160,20 +160,7 @@ function HomePage() {
       </div>
 
       {/* Axborotnoma */}
-      <div className="bg-accent py-12 md:py-20 px-4 md:px-8 text-center">
-        <p className="text-[11px] font-bold tracking-[0.12em] uppercase text-white/80 mb-3 md:mb-4">Yangiliklardan Xabardor Bo'ling</p>
-        <h2 className="text-xl md:text-[clamp(24px,3vw,40px)] font-serif font-normal text-white mb-3 md:mb-4">Axborotnomaning Obuna Bo'ling</h2>
-        <p className="text-white/80 text-sm md:text-base mb-6 md:mb-9">Dizayn ilhomi, yangi mahsulotlar va eksklyuziv takliflarni pochtangizda oling.</p>
-        <div className="flex gap-3 justify-center flex-wrap">
-          <input 
-            placeholder="Email manzilingiz" 
-            className="border-none rounded-full py-3 md:py-3.5 px-5 md:px-7 text-sm md:text-[15px] w-[250px] md:w-[300px] outline-none font-sans" 
-          />
-          <button className="bg-dark text-white border-none rounded-full px-6 md:px-8 py-3 md:py-3.5 text-xs md:text-sm font-bold cursor-pointer tracking-[0.06em]">
-            Obuna Bo'lish
-          </button>
-        </div>
-      </div>
+     
     </div>
   );
 }
