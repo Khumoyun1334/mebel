@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { ToastProvider } from './context/ToastContext';
 import { AdminProvider, useAdmin } from './context/AdminContext';
+import { AuthProvider } from './context/AuthContext';
 import { useAdminShortcut } from './hooks/useAdminShortcut';
 import { supabase } from './services/supabase';
 import Navbar from './components/Navbar';
@@ -21,13 +22,16 @@ import WishlistPage from './pages/WishlistPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 
-// ============ SCROLL TO TOP KOMPONENTI ============
-// Bu komponent sahifa o'zgarganda scroll ni yuqoriga chiqaradi
+// Profil sahifalari
+import ProfilePage from './pages/ProfilePage';
+import ProfileOrdersPage from './pages/ProfileOrdersPage';
+import ProfileAddressesPage from './pages/ProfileAddressesPage';
+
+// Scroll to top komponenti
 function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Sahifa o'zgarganda darhol scroll ni 0 ga tushirish
     window.scrollTo({
       top: 0,
       left: 0,
@@ -37,7 +41,6 @@ function ScrollToTop() {
 
   return null;
 }
-// ============ SCROLL TO TOP KOMPONENTI TUGADI ============
 
 function AppContent() {
   const { showAdminModal, setShowAdminModal, isAdmin, loading } = useAdmin();
@@ -64,19 +67,28 @@ function AppContent() {
     }
   };
 
-  // testConnection ni ishga tushirish
   useEffect(() => {
     testConnection();
   }, []);
 
-
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-lightBg flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Ma'lumotlar yuklanmoqda...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-serif bg-lightBg min-h-screen flex flex-col">
-      <ScrollToTop /> {/* Scroll ni yuqoriga chiqarish komponenti */}
+      <ScrollToTop />
       <Navbar />
       <main className="flex-1">
         <Routes>
+          {/* Asosiy sahifalar */}
           <Route path="/" element={<HomePage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
@@ -85,6 +97,13 @@ function AppContent() {
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          
+          {/* Profil sahifalari */}
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/orders" element={<ProfileOrdersPage />} />
+          <Route path="/profile/addresses" element={<ProfileAddressesPage />} />
+          
+          {/* 404 sahifasi */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -101,9 +120,11 @@ function App() {
     <ToastProvider>
       <CartProvider>
         <WishlistProvider>
-          <AdminProvider>
-            <AppContent />
-          </AdminProvider>
+          <AuthProvider>
+            <AdminProvider>
+              <AppContent />
+            </AdminProvider>
+          </AuthProvider>
         </WishlistProvider>
       </CartProvider>
     </ToastProvider>

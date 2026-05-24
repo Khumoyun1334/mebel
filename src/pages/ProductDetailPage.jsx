@@ -7,7 +7,9 @@ import { useAdmin } from '../context/AdminContext';
 import ProductCard from '../components/ProductCard';
 import SectionTitle from '../components/SectionTitle';
 import Stars from '../components/Stars';
+import ProductReviews from '../components/ProductReviews';
 import { FiHeart, FiCheck, FiMinus, FiPlus, FiChevronRight } from 'react-icons/fi';
+import { formatPrice, getDiscountPercent } from '../utils/formatPrice';
 
 function ProductDetailPage() {
   const { id } = useParams();
@@ -23,12 +25,12 @@ function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState(0);
   const isWishlisted = hasInWishlist(product?.id);
   
-  // Galereya rasmlari - agar images bo'lmasa, asosiy rasmni ishlatamiz
   const galleryImages = product?.images && product.images.length > 0 
     ? product.images 
     : (product?.img ? [product.img] : []);
   
   const related = products.filter(p => p.category === product?.category && p.id !== product?.id).slice(0, 4);
+  const discountPercent = getDiscountPercent(product?.oldPrice, product?.price);
 
   if (!product) {
     return (
@@ -40,8 +42,6 @@ function ProductDetailPage() {
       </div>
     );
   }
-
-  const discount = product.oldPrice ? product.oldPrice - product.price : 0;
 
   return (
     <div className="min-h-screen bg-lightBg pt-[72px]">
@@ -93,21 +93,24 @@ function ProductDetailPage() {
               <span className="text-xs text-gray-400">|</span>
               <span className="text-xs text-success font-semibold">Sotuvda Bor</span>
             </div>
+            
+            {/* Narx qismi - so'mda */}
             <div className="flex items-baseline gap-3 mb-6 md:mb-7 pb-6 border-b border-gray-100">
               <span className="font-serif text-2xl md:text-4xl text-dark font-normal">
-                ${product.price.toLocaleString()}
+                {formatPrice(product.price)} so'm
               </span>
               {product.oldPrice && (
                 <>
                   <span className="text-base md:text-xl text-gray-400 line-through">
-                    ${product.oldPrice.toLocaleString()}
+                    {formatPrice(product.oldPrice)} so'm
                   </span>
                   <span className="bg-green-50 text-success text-xs md:text-sm font-semibold px-2 py-1 rounded">
-                    ${discount.toLocaleString()} tejang
+                    {discountPercent}% chegirma
                   </span>
                 </>
               )}
             </div>
+            
             <p className="text-sm md:text-base leading-relaxed text-gray-600 mb-6 md:mb-7">{product.desc}</p>
 
             {/* Ranglar */}
@@ -164,15 +167,28 @@ function ProductDetailPage() {
 
             {/* Xususiyatlar */}
             <div className="grid grid-cols-2 gap-3">
-              {["$500+ Bepul Yetkazib Berish", "30-Kunlik Qaytarish", "2 Yillik Kafolat", "Yig'ish Xizmati"].map(f => (
-                <div key={f} className="flex items-center gap-2 text-xs text-gray-500">
-                  <FiCheck className="text-success" size={14} />
-                  <span>{f}</span>
-                </div>
-              ))}
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <FiCheck className="text-success" size={14} />
+                <span>500 ming so'mdan bepul yetkazib berish</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <FiCheck className="text-success" size={14} />
+                <span>30-Kunlik Qaytarish</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <FiCheck className="text-success" size={14} />
+                <span>2 Yillik Kafolat</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <FiCheck className="text-success" size={14} />
+                <span>Yig'ish Xizmati</span>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Mahsulot baholash tizimi */}
+        <ProductReviews productId={product.id} />
 
         {/* O'xshash Mahsulotlar */}
         {related.length > 0 && (

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../context/AdminContext';
 import { useToast } from '../context/ToastContext';
-import { FiPlus, FiX, FiUpload } from 'react-icons/fi';
+import ImageUpload from './ImageUpload';
+import GalleryUpload from './GalleryUpload';
+import { FiPlus, FiX } from 'react-icons/fi';
 
 function ProductFormModal({ product, onClose }) {
   const { addProduct, updateProduct } = useAdmin();
@@ -14,6 +16,7 @@ function ProductFormModal({ product, onClose }) {
     price: product?.price || '',
     oldPrice: product?.oldPrice || '',
     badge: product?.badge || '',
+    img: product?.img || '',
     images: product?.images || [],
     desc: product?.desc || '',
     rating: product?.rating || 0,
@@ -21,68 +24,86 @@ function ProductFormModal({ product, onClose }) {
     colors: product?.colors || ['#8B7355', '#4A4A4A', '#C89B6D']
   });
 
-  const [mainImageIndex, setMainImageIndex] = useState(0);
-  const [dragActive, setDragActive] = useState(false);
+  // Inputda ko'rinadigan narx (vergul bilan)
+  const [priceDisplay, setPriceDisplay] = useState(() => {
+    if (product?.price) {
+      return formatNumberWithCommas(product.price);
+    }
+    return '';
+  });
+
+  const [oldPriceDisplay, setOldPriceDisplay] = useState(() => {
+    if (product?.oldPrice) {
+      return formatNumberWithCommas(product.oldPrice);
+    }
+    return '';
+  });
 
   const categories = ['Oshxona Mebellari', 'Yotoqxona Mebellari', 'Mehmonxona Mebellari', 'Yumshoq Mebellar', 'Ofis Mebellari'];
   const badges = ['', 'Eng Ko\'p Sotilgan', 'Yangi', 'Premium', 'Chegirma'];
   const colorOptions = ['#8B7355', '#4A4A4A', '#C89B6D', '#2C3E50', '#E8DDD4', '#FFFFFF', '#4A2C6B', '#1A3A5C'];
+
+  // Raqamni vergul bilan formatlash
+  function formatNumberWithCommas(num) {
+    if (!num && num !== 0) return '';
+    // Raqamni butun qilib olish
+    const numStr = num.toString().replace(/[^0-9]/g, '');
+    if (!numStr) return '';
+    // Vergul qo'yish
+    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // Vergulli matndan raqam olish
+  function parseNumberFromDisplay(value) {
+    if (!value) return '';
+    // Faqat raqamlarni olish
+    const numbers = value.replace(/[^0-9]/g, '');
+    if (!numbers) return '';
+    return parseInt(numbers, 10);
+  }
+
+  // Narx input o'zgarishi
+  const handlePriceChange = (e) => {
+    let value = e.target.value;
+    // Faqat raqamlar va vergul qoldirish
+    value = value.replace(/[^0-9,]/g, '');
+    // Vergulni vaqtincha olib tashlash
+    let rawValue = value.replace(/,/g, '');
+    // Raqamni formatlash
+    const formatted = formatNumberWithCommas(rawValue);
+    setPriceDisplay(formatted);
+    
+    // Haqiqiy qiymatni saqlash
+    const realValue = parseNumberFromDisplay(formatted);
+    setFormData(prev => ({ ...prev, price: realValue }));
+  };
+
+  const handleOldPriceChange = (e) => {
+    let value = e.target.value;
+    value = value.replace(/[^0-9,]/g, '');
+    let rawValue = value.replace(/,/g, '');
+    const formatted = formatNumberWithCommas(rawValue);
+    setOldPriceDisplay(formatted);
+    
+    const realValue = parseNumberFromDisplay(formatted);
+    setFormData(prev => ({ ...prev, oldPrice: realValue }));
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Rasm yuklash funksiyasi
-  const handleImageUpload = (files) => {
-    const newImages = [];
-    const fileArray = Array.from(files);
-    
-    fileArray.forEach(file => {
-      if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          newImages.push(reader.result);
-          if (newImages.length === fileArray.length) {
-            setFormData(prev => ({
-              ...prev,
-              images: [...prev.images, ...newImages]
-            }));
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+  const handleImageSelect = (imageData) => {
+    setFormData(prev => ({ ...prev, img: imageData }));
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragActive(false);
-    const files = e.dataTransfer.files;
-    handleImageUpload(files);
+  const handleImageRemove = () => {
+    setFormData(prev => ({ ...prev, img: '' }));
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setDragActive(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setDragActive(false);
-  };
-
-  const handleFileSelect = (e) => {
-    const files = e.target.files;
-    handleImageUpload(files);
-  };
-
-  const handleRemoveImage = (index) => {
-    const newImages = formData.images.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, images: newImages }));
-    if (mainImageIndex >= newImages.length) {
-      setMainImageIndex(Math.max(0, newImages.length - 1));
-    }
+  const handleGalleryChange = (galleryImages) => {
+    setFormData(prev => ({ ...prev, images: galleryImages }));
   };
 
   const handleAddColor = () => {
@@ -111,16 +132,16 @@ function ProductFormModal({ product, onClose }) {
       return;
     }
 
-    if (formData.images.length === 0) {
-      showToast("Kamida bitta rasm yuklang!", "error");
+    if (!formData.img && !isEditing) {
+      showToast("Mahsulot uchun asosiy rasm yuklang!", "error");
       return;
     }
 
     const productData = {
       ...formData,
-      price: parseFloat(formData.price),
-      oldPrice: formData.oldPrice ? parseFloat(formData.oldPrice) : null,
-      img: formData.images[mainImageIndex] || formData.images[0]
+      price: Number(formData.price),
+      oldPrice: formData.oldPrice ? Number(formData.oldPrice) : null,
+      images: formData.images.length > 0 ? formData.images : [formData.img]
     };
 
     if (isEditing) {
@@ -134,10 +155,16 @@ function ProductFormModal({ product, onClose }) {
     onClose();
   };
 
+  // Narxni chiroyli ko'rsatish
+  const getPriceDisplay = (price) => {
+    if (!price) return '';
+    return formatNumberWithCommas(price) + ' so\'m';
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000] animate-fadeIn overflow-y-auto py-8">
       <div className="bg-white rounded-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-4 md:p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+        <div className="flex justify-between items-center p-4 md:p-6 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="text-xl md:text-2xl font-serif text-dark">
             {isEditing ? 'Mahsulotni Tahrirlash' : 'Yangi Mahsulot Qo\'shish'}
           </h2>
@@ -155,12 +182,13 @@ function ProductFormModal({ product, onClose }) {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Masalan: Luca Divan"
+              placeholder="Masalan: Luka Divan"
               className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all"
               required
             />
           </div>
 
+          {/* Kategoriya va Narx */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">
@@ -180,34 +208,38 @@ function ProductFormModal({ product, onClose }) {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">
-                Narxi ($) <span className="text-red-500">*</span>
+                Narxi (so'm) <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="Masalan: 2499"
+                type="text"
+                value={priceDisplay}
+                onChange={handlePriceChange}
+                placeholder="Masalan: 2449000 yoki 2,449,000"
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all"
                 required
               />
+              <p className="text-xs text-gray-400 mt-1">
+                💡 Raqamni yozing, vergul avtomatik qo'yiladi: <span className="text-accent">2449000</span> → <span className="text-accent">2,449,000</span>
+              </p>
             </div>
           </div>
 
-        
+          {/* Eski Narx va Badge */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">
-                Eski Narxi ($)
+                Eski Narxi (chegirma uchun)
               </label>
               <input
-                type="number"
-                name="oldPrice"
-                value={formData.oldPrice}
-                onChange={handleChange}
-                placeholder="Masalan: 3200"
+                type="text"
+                value={oldPriceDisplay}
+                onChange={handleOldPriceChange}
+                placeholder="Masalan: 3200000 yoki 3,200,000"
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-accent transition-all"
               />
+              <p className="text-xs text-gray-400 mt-1">
+                💡 Ixtiyoriy, chegirma foizi avtomatik hisoblanadi
+              </p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-600 mb-2">
@@ -226,69 +258,40 @@ function ProductFormModal({ product, onClose }) {
             </div>
           </div>
 
+          {/* Hozirgi narx ko'rinishi */}
+          {formData.price && (
+            <div className="bg-green-50 rounded-xl p-3">
+              <p className="text-sm text-green-700">
+                ✅ Hozirgi narx: <span className="font-bold">{getPriceDisplay(formData.price)}</span>
+              </p>
+            </div>
+          )}
+
+          {/* Asosiy Rasm */}
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-2">
-              Mahsulot Rasmlari <span className="text-red-500">*</span>
+              Asosiy Rasm <span className="text-red-500">*</span>
             </label>
-  
-            <div
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all mb-4 ${
-                dragActive ? 'border-accent bg-accent/10' : 'border-gray-300 hover:border-accent'
-              }`}
-              onClick={() => document.getElementById('imageInput')?.click()}
-            >
-              <input
-                id="imageInput"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              <FiUpload size={40} className="mx-auto mb-3 text-gray-400" />
-              <p className="text-sm text-gray-500">Rasm yuklash uchun bosing yoki suring</p>
-              <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF formatlari (10 tagacha)</p>
-            </div>
-
-            {formData.images.length > 0 && (
-              <div>
-                <p className="text-sm text-gray-600 mb-2">Yuklangan rasmlar ({formData.images.length})</p>
-                <div className="flex flex-wrap gap-3">
-                  {formData.images.map((img, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={img}
-                        alt={`Rasm ${index + 1}`}
-                        className={`w-24 h-24 rounded-lg object-cover border-2 cursor-pointer transition-all ${
-                          mainImageIndex === index ? 'border-accent shadow-md' : 'border-gray-200 hover:border-accent'
-                        }`}
-                        onClick={() => setMainImageIndex(index)}
-                      />
-                      {mainImageIndex === index && (
-                        <div className="absolute -top-2 -left-2 bg-accent text-white text-xs px-1.5 py-0.5 rounded-full">
-                          Asosiy
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        <FiX size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  💡 Asosiy rasmni belgilash uchun ustiga bosing
-                </p>
-              </div>
-            )}
+            <ImageUpload
+              onImageSelect={handleImageSelect}
+              currentImage={formData.img}
+              onRemove={handleImageRemove}
+            />
           </div>
 
+          {/* Galereya Rasmlari */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-600 mb-2">
+              Galereya Rasmlari (Qo'shimcha)
+            </label>
+            <GalleryUpload
+              images={formData.images}
+              onImagesChange={handleGalleryChange}
+              maxImages={6}
+            />
+          </div>
+
+          {/* Ranglar */}
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-2">
               Mavjud Ranglar
@@ -338,6 +341,7 @@ function ProductFormModal({ product, onClose }) {
             </div>
           </div>
 
+          {/* Tavsif */}
           <div>
             <label className="block text-sm font-semibold text-gray-600 mb-2">
               Tavsif <span className="text-red-500">*</span>
@@ -353,7 +357,7 @@ function ProductFormModal({ product, onClose }) {
             />
           </div>
 
-  
+          {/* Reyting (faqat tahrirlashda) */}
           {isEditing && (
             <div className="grid grid-cols-2 gap-4">
               <div>

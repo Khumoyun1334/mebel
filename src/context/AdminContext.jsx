@@ -7,7 +7,6 @@ export function AdminProvider({ children }) {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [contactMessages, setContactMessages] = useState([]);
-  // loading o'chirildi !!!!!!!!!!!!!!!!!
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('luxehome_admin') === 'true';
   });
@@ -16,7 +15,7 @@ export function AdminProvider({ children }) {
   const supabaseUrl = 'https://hxrwrhbbijfntbrntpxk.supabase.co';
   const supabaseKey = 'sb_publishable_qnJTSPaIOR5tn0dZw2RdgA_w6WOjvsJ';
 
-  // Ma'lumotlarni yuklash - loading'siz
+  // Ma'lumotlarni yuklash
   const loadData = async () => {
     try {
       console.log('🔍 Ma\'lumotlar yuklanmoqda...');
@@ -47,9 +46,6 @@ export function AdminProvider({ children }) {
       
     } catch (error) {
       console.error('❌ Ma\'lumotlarni yuklashda xatolik:', error);
-      setProducts([]);
-      setOrders([]);
-      setContactMessages([]);
     }
   };
 
@@ -57,7 +53,6 @@ export function AdminProvider({ children }) {
     loadData();
   }, []);
 
-  // Admin login
   const loginAdmin = (password) => {
     if (password === 'admin123') {
       setIsAdmin(true);
@@ -74,7 +69,6 @@ export function AdminProvider({ children }) {
 
   // ============ MAHSULOTLAR ============
   
-  // Mahsulot qo'shish
   const addProduct = async (product) => {
     try {
       const newProduct = {
@@ -112,7 +106,6 @@ export function AdminProvider({ children }) {
     }
   };
 
-  // Mahsulot tahrirlash
   const updateProduct = async (id, updates) => {
     try {
       const response = await fetch(`${supabaseUrl}/rest/v1/products?id=eq.${id}&apikey=${supabaseKey}`, {
@@ -144,7 +137,6 @@ export function AdminProvider({ children }) {
     }
   };
 
-  // Mahsulot o'chirish
   const deleteProduct = async (id) => {
     try {
       const response = await fetch(`${supabaseUrl}/rest/v1/products?id=eq.${id}&apikey=${supabaseKey}`, {
@@ -162,9 +154,8 @@ export function AdminProvider({ children }) {
     }
   };
 
-  // ============ BUYURTMALAR ============
+  // ============ BUYURTMALAR (JOYLASHUV BILAN) ============
   
-  // Buyurtma qo'shish
   const addOrder = async (orderData) => {
     try {
       const now = new Date();
@@ -177,8 +168,14 @@ export function AdminProvider({ children }) {
         items: orderData.items,
         total: orderData.total,
         status: 'pending',
-        created_at: now.toISOString()
+        created_at: now.toISOString(),
+        // Joylashuv ma'lumotlari
+        location_lat: orderData.location?.lat || null,
+        location_lng: orderData.location?.lng || null,
+        location_link: orderData.locationLink || null
       };
+      
+      console.log('📦 Yangi buyurtma:', newOrder);
       
       const response = await fetch(`${supabaseUrl}/rest/v1/orders?apikey=${supabaseKey}`, {
         method: 'POST',
@@ -193,7 +190,7 @@ export function AdminProvider({ children }) {
       
       await loadData();
       
-      // Telegramga xabar yuborish
+      // Telegramga xabar yuborish (joylashuv linki bilan)
       const message = formatOrderMessage({
         id: newOrder.id,
         customerName: newOrder.customer_name,
@@ -203,7 +200,8 @@ export function AdminProvider({ children }) {
         items: newOrder.items,
         total: newOrder.total,
         status: newOrder.status,
-        created_at: newOrder.created_at
+        created_at: newOrder.created_at,
+        location_link: newOrder.location_link
       });
       await sendTelegramMessage(message);
       
@@ -214,7 +212,6 @@ export function AdminProvider({ children }) {
     }
   };
 
-  // Buyurtma holatini yangilash
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}&apikey=${supabaseKey}`, {
@@ -233,7 +230,7 @@ export function AdminProvider({ children }) {
       
       await loadData();
       
-      // Holat o'zgarishi haqida Telegramga xabar yuborish
+      // Holat o'zgarishi haqida xabar
       const order = orders.find(o => o.id === orderId);
       if (order) {
         const statusMessage = `
@@ -255,7 +252,6 @@ export function AdminProvider({ children }) {
     }
   };
 
-  // Buyurtmani o'chirish
   const deleteOrder = async (orderId) => {
     try {
       const response = await fetch(`${supabaseUrl}/rest/v1/orders?id=eq.${orderId}&apikey=${supabaseKey}`, {
@@ -275,7 +271,6 @@ export function AdminProvider({ children }) {
 
   // ============ XABARLAR ============
   
-  // Xabar qo'shish
   const addContactMessage = async (messageData) => {
     try {
       const newMessage = {
@@ -302,7 +297,6 @@ export function AdminProvider({ children }) {
       
       await loadData();
       
-      // Telegramga xabar yuborish
       const message = formatContactMessage(newMessage);
       await sendTelegramMessage(message);
       
@@ -313,7 +307,6 @@ export function AdminProvider({ children }) {
     }
   };
 
-  // Xabar statusini yangilash (o'qilgan/read)
   const updateMessageStatus = async (messageId, status) => {
     try {
       const response = await fetch(`${supabaseUrl}/rest/v1/messages?id=eq.${messageId}&apikey=${supabaseKey}`, {
@@ -338,7 +331,6 @@ export function AdminProvider({ children }) {
     }
   };
 
-  // Xabarni o'chirish
   const deleteMessage = async (messageId) => {
     try {
       const response = await fetch(`${supabaseUrl}/rest/v1/messages?id=eq.${messageId}&apikey=${supabaseKey}`, {
@@ -361,7 +353,6 @@ export function AdminProvider({ children }) {
   const getStats = () => {
     const totalOrders = orders.length;
     const pendingOrders = orders.filter(o => o.status === 'pending').length;
-    const processingOrders = orders.filter(o => o.status === 'processing').length;
     const completedOrders = orders.filter(o => o.status === 'completed').length;
     const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
     const totalRevenue = orders
@@ -372,7 +363,6 @@ export function AdminProvider({ children }) {
     return {
       totalOrders,
       pendingOrders,
-      processingOrders,
       completedOrders,
       cancelledOrders,
       totalRevenue,
@@ -380,7 +370,6 @@ export function AdminProvider({ children }) {
     };
   };
 
-  // Yordamchi funksiya
   const getStatusName = (status) => {
     const names = {
       pending: 'Kutilmoqda',
@@ -396,7 +385,6 @@ export function AdminProvider({ children }) {
       products,
       orders,
       contactMessages,
-      // loading o'chirildi !!!!!!!!!!!!!!!!!
       isAdmin,
       showAdminModal,
       setShowAdminModal,

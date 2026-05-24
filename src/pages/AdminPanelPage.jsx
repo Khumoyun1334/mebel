@@ -59,7 +59,7 @@ function AdminPanelPage() {
 
   return (
     <div className="min-h-screen bg-lightBg pt-[72px]">
-      {/* Header */}
+
       <div className="bg-dark text-white py-4 px-4 md:px-8 sticky top-[72px] z-40">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
@@ -84,7 +84,7 @@ function AdminPanelPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
-        {/* Filters */}
+    
         <div className="flex flex-wrap gap-3 mb-6 justify-between items-center bg-white p-3 md:p-4 rounded-xl shadow-sm">
           <div className="flex gap-2 flex-wrap">
             {categories.map(cat => (
@@ -172,7 +172,6 @@ function AdminPanelPage() {
         </div>
       </div>
 
-      {/* Product Form Modal */}
       {showForm && (
         <ProductFormModal
           product={editingProduct}

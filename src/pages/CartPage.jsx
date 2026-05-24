@@ -4,12 +4,19 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import CheckoutModal from '../components/CheckoutModal';
 import { FiTrash2, FiMinus, FiPlus, FiShoppingCart } from 'react-icons/fi';
+import { formatPrice } from '../utils/formatPrice';
 
 function CartPage() {
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQuantity, total, clearCart } = useCart();
   const { showToast } = useToast();
   const [showCheckout, setShowCheckout] = useState(false);
+
+  // Bepul yetkazib berish chegarasi 500,000 so'm
+  const freeShippingThreshold = 500000;
+  const shipping = total >= freeShippingThreshold ? 0 : 49000;
+  const tax = Math.round(total * 0.08);
+  const grandTotal = total + shipping + tax;
 
   if (cart.length === 0) {
     return (
@@ -23,10 +30,6 @@ function CartPage() {
       </div>
     );
   }
-
-  const shipping = total >= 500 ? 0 : 49;
-  const tax = Math.round(total * 0.08);
-  const grandTotal = total + shipping + tax;
 
   const handleCheckoutSuccess = () => {
     clearCart();
@@ -65,7 +68,7 @@ function CartPage() {
                 </div>
                 <div className="text-right flex sm:flex-col justify-between items-center sm:items-end gap-3">
                   <span className="font-serif text-lg md:text-xl text-dark font-normal">
-                    ${(item.price * item.qty).toLocaleString()}
+                    {formatPrice(item.price * item.qty)} so'm
                   </span>
                   <button onClick={() => { removeFromCart(item.id); showToast("Buyum o'chirildi", "error"); }} className="text-red-500 text-xs flex items-center gap-1 hover:underline">
                     <FiTrash2 size={14} /> O'chirish
@@ -81,26 +84,26 @@ function CartPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Umumiy narx</span>
-                  <span className="font-semibold text-dark">${total.toLocaleString()}</span>
+                  <span className="font-semibold text-dark">{formatPrice(total)} so'm</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Yetkazib berish</span>
-                  <span className="font-semibold text-dark">{shipping === 0 ? "Bepul" : `$${shipping}`}</span>
+                  <span className="font-semibold text-dark">{shipping === 0 ? "Bepul" : `${formatPrice(shipping)} so'm`}</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Soliq (8%)</span>
-                  <span className="font-semibold text-dark">${tax.toLocaleString()}</span>
+                  <span className="font-semibold text-dark">{formatPrice(tax)} so'm</span>
                 </div>
               </div>
               <div className="border-t border-gray-100 pt-4 mt-4">
                 <div className="flex justify-between font-serif text-base md:text-lg">
                   <span>Jami</span>
-                  <span className="text-accent">${grandTotal.toLocaleString()}</span>
+                  <span className="text-accent">{formatPrice(grandTotal)} so'm</span>
                 </div>
               </div>
               {shipping > 0 && (
                 <p className="text-center text-accent text-xs bg-accent-light py-2 rounded-lg mt-4">
-                  Bepul yetkazib berish uchun yana ${(500 - total).toLocaleString()} xarid qiling!
+                  Bepul yetkazib berish uchun yana {formatPrice(freeShippingThreshold - total)} so'm xarid qiling!
                 </p>
               )}
               <button 

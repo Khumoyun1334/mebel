@@ -1,4 +1,3 @@
-
 const TELEGRAM_BOT_TOKEN = '8631017902:AAHziTfx6wpV1K-zmDcue3F9inqjaeGfA3U';
 const TELEGRAM_CHAT_ID = '-1003942338438';
 
@@ -77,10 +76,11 @@ export const formatOrderMessage = (order) => {
     payme: 'Payme'
   };
   
+  // Mahsulotlar ro'yxati
   let itemsList = '';
   if (order.items && order.items.length > 0) {
     itemsList = order.items.map(item => 
-      `  • ${item.name || 'Noma\'lum'} x${item.qty || 0} = $${((item.price || 0) * (item.qty || 0)).toLocaleString()}`
+      `  • ${item.name || 'Noma\'lum'} x${item.qty || 0} = ${((item.price || 0) * (item.qty || 0)).toLocaleString()} so'm`
     ).join('\n');
   } else {
     itemsList = '  • Mahsulotlar yo\'q';
@@ -95,6 +95,12 @@ export const formatOrderMessage = (order) => {
   const total = order.total || 0;
   const createdAt = order.created_at || order.createdAt || new Date().toISOString();
 
+  // JOYLASHUV LINKI (qo'shilgan qism)
+  const locationLink = order.location_link;
+  const locationHtml = locationLink 
+    ? `\n\n📍 <b>Mijoz joylashuvi:</b>\n<a href="${locationLink}">🗺️ Google Maps da ko'rish</a>\n💡 Admin: linkni bosing, yetkazib beruvchiga yuboring!`
+    : '';
+
   return `
 ✅ <b>YANGI BUYURTMA!</b> 
 
@@ -105,13 +111,15 @@ export const formatOrderMessage = (order) => {
 <b>👤 Mijoz ma'lumotlari:</b>
 • Ism: ${customerName}
 • Telefon: ${customerPhone}
-• Manzil: ${customerAddress}
+• Manzil: ${customerAddress}${locationHtml}
 • To'lov: ${paymentName[paymentMethod] || paymentMethod}
 
 <b>🛒 Mahsulotlar:</b>
 ${itemsList}
 
-<b>💰 Jami: $${total.toLocaleString()}</b>
+<b>💰 Jami: ${total.toLocaleString()} so'm</b>
+
+🔗 <a href="${window.location.origin}/admin">Admin panelga o'tish</a>
   `;
 };
 
