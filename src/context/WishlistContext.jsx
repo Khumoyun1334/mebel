@@ -8,7 +8,7 @@ export function WishlistProvider({ children }) {
   // LocalStorage dan yuklash
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("luxehome_wishlist");
+      const saved = localStorage.getItem("wishlist");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -18,29 +18,25 @@ export function WishlistProvider({ children }) {
       }
     } catch (error) {
       console.error("Wishlistni yuklashda xatolik:", error);
-      localStorage.removeItem("luxehome_wishlist");
+      localStorage.removeItem("wishlist");
     }
   }, []);
 
-  // LocalStorage ga saqlash - xatolikni ushlash
+  // LocalStorage ga saqlash
   useEffect(() => {
     try {
       if (wishlist.length === 0) {
-        localStorage.removeItem("luxehome_wishlist");
+        localStorage.removeItem("wishlist");
       } else {
-        localStorage.setItem("luxehome_wishlist", JSON.stringify(wishlist));
+        localStorage.setItem("wishlist", JSON.stringify(wishlist));
         console.log("💾 Wishlist saqlandi:", wishlist.length);
       }
     } catch (error) {
+      console.error("Wishlistni saqlashda xatolik:", error);
       if (error.name === "QuotaExceededError") {
-        console.error("❌ Wishlist to'lib qolgan!");
         localStorage.clear();
-        setWishlist([]);
-        alert(
-          "Wishlist to'lib qolgan! Iltimos, sahifani yangilang va qayta urinib ko'ring.",
-        );
-      } else {
-        console.error("Wishlistni saqlashda xatolik:", error);
+        alert("Wishlist ma'lumotlari tozalandi. Iltimos, sahifani yangilang!");
+        window.location.reload();
       }
     }
   }, [wishlist]);

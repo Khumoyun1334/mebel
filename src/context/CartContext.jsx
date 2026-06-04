@@ -5,10 +5,10 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
 
-  // LocalStorage dan yuklash
+  // LocalStorage dan yuklash - hech qanday cheklovsiz
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("luxehome_cart");
+      const saved = localStorage.getItem("cart");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -18,30 +18,27 @@ export function CartProvider({ children }) {
       }
     } catch (error) {
       console.error("Savatni yuklashda xatolik:", error);
-      localStorage.removeItem("luxehome_cart");
+      // Xatolik bo'lsa, localStorage ni tozalash
+      localStorage.removeItem("cart");
     }
   }, []);
 
-  // LocalStorage ga saqlash - xatolikni ushlash
+  // LocalStorage ga saqlash
   useEffect(() => {
     try {
       if (cart.length === 0) {
-        localStorage.removeItem("luxehome_cart");
+        localStorage.removeItem("cart");
       } else {
-        localStorage.setItem("luxehome_cart", JSON.stringify(cart));
+        localStorage.setItem("cart", JSON.stringify(cart));
         console.log("💾 Savat saqlandi:", cart.length);
       }
     } catch (error) {
+      console.error("Savatni saqlashda xatolik:", error);
       if (error.name === "QuotaExceededError") {
-        console.error("❌ Savat to'lib qolgan!");
-        // localStorage ni tozalash va savatni bo'shatish
+        // localStorage to'lib qolgan, tozalash
         localStorage.clear();
-        setCart([]);
-        alert(
-          "Savat to'lib qolgan! Iltimos, sahifani yangilang va qayta urinib ko'ring.",
-        );
-      } else {
-        console.error("Savatni saqlashda xatolik:", error);
+        alert("Savat ma'lumotlari tozalandi. Iltimos, sahifani yangilang!");
+        window.location.reload();
       }
     }
   }, [cart]);
@@ -76,7 +73,7 @@ export function CartProvider({ children }) {
 
   const clearCart = () => {
     setCart([]);
-    localStorage.removeItem("luxehome_cart");
+    localStorage.removeItem("cart");
   };
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
