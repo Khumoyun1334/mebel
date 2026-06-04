@@ -19,7 +19,7 @@ function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-8 md:mb-12">
           <div>
             <div className="text-lg md:text-[22px] font-bold font-serif text-white mb-4">
-              Luxe<span className="text-accent">Home</span>
+              Azizbek <span className="text-accent">Mebellari</span>
             </div>
             <p className="text-gray-600 leading-relaxed text-xs md:text-sm max-w-[280px]">
               Ajoyib uylar uchun tanlangan mebel. Har bir buyumda sifat, go'zallik va mahorat.

@@ -10,7 +10,7 @@ function CheckoutModal({ onClose, onSuccess }) {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState(null);
-  const [locationText, setLocationText] = useState('');
+  const [locationText, setLocationText] = useState(''); 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [address, setAddress] = useState('');
 
