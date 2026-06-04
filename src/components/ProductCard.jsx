@@ -14,15 +14,20 @@ function ProductCard({ product }) {
   const { showToast } = useToast();
   const [hovered, setHovered] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
-  // Faqat state orqali tekshirish, har safar yangilanadi
   const isWishlisted = hasInWishlist(product?.id);
   const discountPercent = getDiscountPercent(product?.oldPrice, product?.price);
 
+  // Xavfsizlik tekshiruvi
   if (!product || !product.id) {
     console.error("ProductCard: product ma'lumoti topilmadi", product);
     return null;
   }
+
+  // Rasm URL
+  const imageUrl =
+    product.img || "https://via.placeholder.com/300x300?text=No+Image";
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -32,11 +37,26 @@ function ProductCard({ product }) {
 
     setIsAdding(true);
     try {
-      addToCart(product);
+      // To'liq mahsulot ma'lumotlarini yuborish
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        img: product.img,
+        category: product.category,
+        oldPrice: product.oldPrice,
+      });
       showToast(`${product.name} savatga qo'shildi!`, "success");
     } catch (error) {
       console.error("Savatga qo'shishda xatolik:", error);
-      showToast("Xatolik yuz berdi. Qayta urinib ko'ring.", "error");
+      if (error.name === "QuotaExceededError") {
+        showToast(
+          "Savat to'lib qolgan. Iltimos, avval savatni tozalang.",
+          "error",
+        );
+      } else {
+        showToast("Xatolik yuz berdi. Qayta urinib ko'ring.", "error");
+      }
     } finally {
       setIsAdding(false);
     }
@@ -45,10 +65,15 @@ function ProductCard({ product }) {
   const handleToggleWishlist = (e) => {
     e.preventDefault();
     e.stopPropagation();
-
     try {
-      toggleWishlist(product);
-      // Toast xabarini ko'rsatish (sahifa qayta yuklanmaydi)
+      // To'liq mahsulot ma'lumotlarini yuborish
+      toggleWishlist({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        img: product.img,
+        category: product.category,
+      });
       showToast(
         isWishlisted
           ? "Istaklar ro'yxatidan o'chirildi"
@@ -70,14 +95,15 @@ function ProductCard({ product }) {
       }`}
     >
       <Link to={`/product/${product.id}`}>
-        <div className="relative overflow-hidden h-56 md:h-60 bg-cream">
+        <div className="relative overflow-hidden h-56 md:h-60 bg-gray-100">
           <img
-            src={product.img}
+            src={imageUrl}
             alt={product.name}
             className={`w-full h-full object-cover transition-transform duration-700 ${hovered ? "scale-110" : "scale-100"}`}
             onError={(e) => {
               e.target.src =
                 "https://via.placeholder.com/300x300?text=No+Image";
+              setImageError(true);
             }}
           />
           <div className="absolute top-3 left-3">
@@ -107,7 +133,7 @@ function ProductCard({ product }) {
           <h3 className="text-sm md:text-base font-semibold text-dark mb-1.5 md:mb-2 font-serif line-clamp-1">
             {product.name}
           </h3>
-          <Stars rating={product.rating} />
+          <Stars rating={product.rating || 0} />
           <div className="flex flex-wrap items-baseline gap-2 mt-2">
             <span className="text-base md:text-lg font-bold text-accent font-serif">
               {formatPrice(product.price)}

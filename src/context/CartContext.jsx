@@ -2,63 +2,117 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 const CartContext = createContext();
 
+const MAX_CART_ITEMS = 30;
+const MAX_QUANTITY = 10;
+
+// Rasm URL ni qisqartirish funksiyasi
+const compressImageUrl = (url) => {
+  if (!url) return "";
+  // Agar Unsplash rasmi bo'lsa, parametrlarni qisqartirish
+  if (url.includes("unsplash.com")) {
+    return url.split("?")[0]; // ? dan keyingi parametrlarni olib tashlash
+  }
+  // URL ni qisqartirish (faqat asosiy qismini saqlash)
+  if (url.length > 100) {
+    return url.substring(0, 100);
+  }
+  return url;
+};
+
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // LocalStorage dan yuklash - hech qanday cheklovsiz
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("cart");
-      if (saved) {
+      const saved = localStorage.getItem("luxehome_cart");
+      if (saved && saved.length < 500000) {
+        // 500KB dan kichik bo'lsa
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           setCart(parsed);
-          console.log("📦 Savat yuklandi:", parsed.length);
+        }
+      } else if (saved && saved.length >= 500000) {
+        localStorage.removeItem("luxehome_cart");
+      }
+    } catch (error) {
+      console.error("LocalStorage dan o'qishda xatolik:", error);
+      localStorage.removeItem("luxehome_cart");
+    }
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    try {
+      if (cart.length === 0) {
+        localStorage.removeItem("luxehome_cart");
+      } else {
+        // Rasm URL ni qisqartirib saqlash
+        const cleanCart = cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          qty: Math.min(item.qty, MAX_QUANTITY),
+          img: compressImageUrl(item.img), // Qisqartirilgan rasm URL
+          category: item.category,
+        }));
+        const jsonStr = JSON.stringify(cleanCart);
+
+        if (jsonStr.length < 500000) {
+          localStorage.setItem("luxehome_cart", jsonStr);
+        } else {
+          console.warn("Savat hajmi juda katta");
+          localStorage.removeItem("luxehome_cart");
         }
       }
     } catch (error) {
-      console.error("Savatni yuklashda xatolik:", error);
-      // Xatolik bo'lsa, localStorage ni tozalash
-      localStorage.removeItem("cart");
-    }
-  }, []);
-
-  // LocalStorage ga saqlash
-  useEffect(() => {
-    try {
-      if (cart.length === 0) {
-        localStorage.removeItem("cart");
-      } else {
-        localStorage.setItem("cart", JSON.stringify(cart));
-        console.log("💾 Savat saqlandi:", cart.length);
-      }
-    } catch (error) {
-      console.error("Savatni saqlashda xatolik:", error);
       if (error.name === "QuotaExceededError") {
-        // localStorage to'lib qolgan, tozalash
-        localStorage.clear();
-        alert("Savat ma'lumotlari tozalandi. Iltimos, sahifani yangilang!");
-        window.location.reload();
+        localStorage.removeItem("luxehome_cart");
       }
     }
-  }, [cart]);
+  }, [cart, isInitialized]);
 
   const addToCart = (product, qty = 1) => {
-    if (!product || !product.id) return;
-
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find((i) => i.id === product.id);
       if (existing) {
-        return prev.map((item) =>
-          item.id === product.id ? { ...item, qty: item.qty + qty } : item,
+        const newQty = existing.qty + qty;
+        if (newQty > MAX_QUANTITY) {
+          alert(
+            `Bir mahsulotdan maksimal ${MAX_QUANTITY} dona qo'shish mumkin!`,
+          );
+          return prev;
+        }
+        return prev.map((i) =>
+          i.id === product.id ? { ...i, qty: newQty } : i,
         );
       }
-      return [...prev, { ...product, qty: qty }];
+
+      if (prev.length >= MAX_CART_ITEMS) {
+        alert(
+          `Savatda maksimal ${MAX_CART_ITEMS} xil mahsulot bo'lishi mumkin!`,
+        );
+        return prev;
+      }
+
+      return [
+        ...prev,
+        {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          qty: Math.min(qty, MAX_QUANTITY),
+          img: compressImageUrl(product.img), // Qisqartirilgan rasm URL
+          category: product.category,
+        },
+      ];
     });
   };
 
   const removeFromCart = (id) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+    setCart((prev) => prev.filter((i) => i.id !== id));
   };
 
   const updateQuantity = (id, qty) => {
@@ -66,18 +120,20 @@ export function CartProvider({ children }) {
       removeFromCart(id);
       return;
     }
-    setCart((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, qty: qty } : item)),
-    );
+    if (qty > MAX_QUANTITY) {
+      alert(`Maksimal ${MAX_QUANTITY} dona bo'lishi mumkin!`);
+      return;
+    }
+    setCart((prev) => prev.map((i) => (i.id === id ? { ...i, qty } : i)));
   };
 
   const clearCart = () => {
     setCart([]);
-    localStorage.removeItem("cart");
+    localStorage.removeItem("luxehome_cart");
   };
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const count = cart.reduce((sum, item) => sum + item.qty, 0);
+  const total = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const count = cart.reduce((sum, i) => sum + i.qty, 0);
 
   return (
     <CartContext.Provider

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
-import { FiHeart, FiShoppingCart } from "react-icons/fi";
+import { FiHeart, FiShoppingCart, FiTrash2 } from "react-icons/fi";
 import { formatPrice } from "../utils/formatPrice";
 
 function WishlistPage() {
@@ -12,18 +12,9 @@ function WishlistPage() {
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
-  const handleAddToCart = (item) => {
-    console.log("🛒 Wishlistdan savatga qo'shish:", item.name);
-    try {
-      addToCart(item, 1);
-      showToast(`${item.name} savatga qo'shildi!`, "success");
-    } catch (error) {
-      console.error("Savatga qo'shishda xatolik:", error);
-      showToast("Xatolik yuz berdi. Qayta urinib ko'ring.", "error");
-    }
-  };
+  console.log("Wishlist mahsulotlar:", wishlist);
 
-  if (!wishlist || wishlist.length === 0) {
+  if (wishlist.length === 0) {
     return (
       <div className="min-h-screen bg-lightBg flex flex-col items-center justify-center gap-4 md:gap-5 px-4 pt-[72px]">
         <FiHeart size={64} className="text-gray-300" />
@@ -57,9 +48,10 @@ function WishlistPage() {
           {wishlist.map((item) => (
             <div
               key={item.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm transition-all hover:shadow-md"
+              className="bg-white rounded-2xl overflow-shadow-sm transition-all hover:shadow-md"
             >
               <div className="relative h-56 bg-cream">
+                {/* Rasm - muhim qism */}
                 <img
                   src={
                     item.img ||
@@ -98,7 +90,10 @@ function WishlistPage() {
                     {formatPrice(item.price)}
                   </span>
                   <button
-                    onClick={() => handleAddToCart(item)}
+                    onClick={() => {
+                      addToCart(item);
+                      showToast(`${item.name} savatga qo'shildi!`, "success");
+                    }}
                     className="bg-dark text-white border-none px-4 py-2 rounded-full text-xs font-semibold cursor-pointer flex items-center gap-1 hover:bg-accent transition-all"
                   >
                     <FiShoppingCart size={12} /> Savatga
